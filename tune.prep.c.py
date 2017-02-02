@@ -17,7 +17,8 @@ model= "MIROC5"
 expr = "C20"
 scen = "ALL"
 lens  = [1]
-ltune = ["070","130"]
+#ltune = ["130","160","190","220","250"]
+ltune = ["100-t02"]
 res  = "128x256"
 
 def my_symlink(srcPath, dstPath):
