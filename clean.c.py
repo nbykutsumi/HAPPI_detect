@@ -20,11 +20,7 @@ Cyclone     = import_module("%s.Cyclone"%(detectName))
 
 prj     = "HAPPI"
 model   = "MIROC5"
-#run     = "C20-ALL-001"
-#run     = "C20-ALL-001-100c"
-#run     = "C20-ALL-001-160c"
-run     = "C20-ALL-001-190c"
-#run     = "C20-ALL-001-160-t02"
+run     = "C20-ALL-001"
 res     = "128x256"
 noleap  = True
 #tctype  = "notc"
