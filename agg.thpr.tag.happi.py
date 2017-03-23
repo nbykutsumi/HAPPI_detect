@@ -24,8 +24,8 @@ Tag         = import_module("%s.Tag"%(detectName))
 prj     = "HAPPI"
 model   = "MIROC5"
 expr    = "C20"
-lscen   = ["ALL"]
-#lscen   = ["P15","P20"]
+#lscen   = ["ALL","P20","P15"]
+lscen   = ["P20","P15"]
 lens    = [1]
 res     = "128x256"
 noleap  = True
@@ -50,7 +50,10 @@ lMon  = range(1,12+1)
 lkey = [[scen, ens] for scen in lscen for ens in lens]
 
 #lthpr = [0.5,"p99.990"]
-lthpr = ["p99.990"]
+#lthpr = ["p99.990"]
+lthpr = ["p99.900"]
+#lthpr = [0.5]
+#lthpr = [0.0]
 
 #----------------------
 def ret_sthpr(thpr):
@@ -64,7 +67,6 @@ def ret_a2thpr(thpr):
     nYear  = 30
     if type(thpr) == str:
         sDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/ptile"
-        #sPath = sDir + "/%s.%s.%s.%s.%04dY.p%6.3f.%dx%d"%(prj,model,expr,scen,len(lYear)*len(lens), p, ny, nx)     
         sPath = sDir + "/%s.%s.%s.%s.%04dY.%s.%dx%d"%(prj,model,expr, "ALL", nYear, thpr, ny, nx)     
         a2thpr = fromfile(sPath, float32).reshape(ny,nx)
 
@@ -104,7 +106,6 @@ for scen, ens in lkey:
     
             for DTime in lDTime: 
             #for DTime in lDTime[8:8+1]: 
-                print DTime
                 dtag = T.mkMaskFrac(ltag_ws, DTime, ltag_2nd)
                 a2pr = hp.load_6hr("prcp",DTime)
 
@@ -123,9 +124,11 @@ for scen, ens in lkey:
                 sthpr = ret_sthpr(thpr)
 
                 for tag in ltag+["plain"]:
-                    sDir    = hd_func.path_sumnum(model=model, expr=expr, scen=scen, ens=ens, sthpr=sthpr, tag=tag, sumnum="sum", Year=Year, Mon=Mon)[1]
-                    sumPath = hd_func.path_sumnum(model=model, expr=expr, scen=scen, ens=ens, sthpr=sthpr, tag=tag, sumnum="sum", Year=Year, Mon=Mon)[-1]
-                    numPath = hd_func.path_sumnum(model=model, expr=expr, scen=scen, ens=ens, sthpr=sthpr, tag=tag, sumnum="num", Year=Year, Mon=Mon)[-1]
+
+                    sDir    = hd_func.path_sumnum(model=model, run=run, res=res, sthpr=sthpr, tag=tag, sumnum="sum", Year=Year, Mon=Mon)[1]
+                    sumPath = hd_func.path_sumnum(model=model, run=run, res=res, sthpr=sthpr, tag=tag, sumnum="sum", Year=Year, Mon=Mon)[-1]
+                    numPath = hd_func.path_sumnum(model=model, run=run, res=res, sthpr=sthpr, tag=tag, sumnum="num", Year=Year, Mon=Mon)[-1]
+
 
                     util.mk_dir(sDir)
                     dsum[tag,thpr].tofile(sumPath)

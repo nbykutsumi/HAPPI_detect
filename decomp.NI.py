@@ -28,14 +28,16 @@ ltag  = ["tc","cf","ms","ot"]
 ltag_ws  = [tag for tag in ltag if tag !="ot"]
 ltag_2nd = ["ms"]
 
-#iYear_his, eYear_his = 2006, 2015
-#iYear_fut, eYear_fut = 2106, 2115
-iYear_his, eYear_his = 2006, 2006
-iYear_fut, eYear_fut = 2106, 2106
+iYear_his, eYear_his = 2006, 2015
+iYear_fut, eYear_fut = 2106, 2115
+
+#iYear_his, eYear_his = 2006, 2006
+#iYear_fut, eYear_fut = 2106, 2106
 season = "ALL"
 #season = 1
 
-lthpr = [0.5]
+#lthpr = [0.5]
+lthpr = [0.0]
 #lthpr = ["p99.990"]
 ddtype = {"sum":"float32", "num":"int32"}
 #----------------------
@@ -110,6 +112,8 @@ for (scen, thpr) in lKey:
             NdI    = num_his * (int_fut - int_his) * 60*60*6
             dNdI   = (num_fut-num_his)*(int_fut - int_his) * 60*60*6
             dP     = (sum_fut - sum_his)*60*60*6
+
+
         
             #- Save ---
             """model, expr, scen, ens, sthpr, tag, Year, Mon"""

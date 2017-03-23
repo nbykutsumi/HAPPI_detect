@@ -9,8 +9,9 @@ import os, sys
 import calendar
 import myfunc.util as util
 # Config ------------------------------------------------
+configPath= os.path.dirname(os.path.abspath(__file__)) + "/config"
 cfg         = SafeConfigParser(os.environ)
-cfg.read("/".join(__file__.split("/")[:-1]) + "/config")
+cfg.read(configPath)
 cfg._sections["Defaults"]
 detectName  = cfg.get("Defaults","detectName")
 config_func = import_module("%s.config_func"%(detectName))
@@ -91,7 +92,8 @@ for bbox in lBBox:
     dlfreq["ref"].append(regional_freq(a2ref, bbox))
 
 # Happi
-lrate = ["org","100-t02","100-t10","130-t02","160-t02"]
+#lrate = ["org","100-t02","100-t10","130-t02","160-t02"]
+lrate = ["org"]
 for rate in lrate:
     if rate == "org":
       run = "C20-ALL-001"
@@ -125,5 +127,6 @@ print filePath
 if figflag != True: sys.exit()
 for rate in ["ref"]+lrate:
     figname = oDir + "/freq.tc.%s.png"%(rate)
+    cmap    = "gist_stern_r"
     stitle  = "%s"%(rate)
-    Fig.DrawMapSimple(da2dat[rate], LatHap, LonHap, vmax=0.003, cmap="jet", figname=figname, stitle=stitle)
+    Fig.DrawMapSimple(a2in=da2dat[rate], a1lat=LatHap, a1lon=LonHap, vmax=0.003, cmap=cmap, figname=figname, stitle=stitle)

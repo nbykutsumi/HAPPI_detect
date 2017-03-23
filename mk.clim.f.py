@@ -25,7 +25,7 @@ model   = "MIROC5"
 #run     = "C20-ALL-001-100-070"
 #run     = "C20-ALL-001-070-100"
 #run     = "C20-ALL-001-080-100"
-run     = "C20-ALL-001-090-100"
+run     = "C20-ALL-001"
 res     = "128x256"
 noleap  = True
 

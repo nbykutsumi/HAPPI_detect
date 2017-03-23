@@ -9,8 +9,9 @@ import os, sys
 import calendar
 import myfunc.util as util
 # Config ------------------------------------------------
+configPath= os.path.dirname(os.path.abspath(__file__)) + "/config"
 cfg         = SafeConfigParser(os.environ)
-cfg.read("/".join(__file__.split("/")[:-1]) + "/config")
+cfg.read(configPath)
 cfg._sections["Defaults"]
 detectName  = cfg.get("Defaults","detectName")
 config_func = import_module("%s.config_func"%(detectName))
@@ -91,10 +92,13 @@ for bbox in lBBox:
     dlfreq["ref"].append(regional_freq(a2ref, bbox))
 
 # Happi
-lrate = [100,130, 160, 190, 210, 220, 250]
+lrate = ["org"]
 #lrate = []
 for rate in lrate:
-    run = "C20-ALL-001-%03d"%(rate)
+    if rate == "org":
+      run = "C20-ALL-001"
+    else:
+      run = "C20-ALL-001-%s"%(rate)
     print run
     a2hap  = load_clim(prj, model, run, nyHap, nxHap, regrid=False)
     da2dat[rate]   = a2hap
@@ -107,7 +111,7 @@ sout = "," + ",".join(["[[%f.1 %f.1][%f.1 %f.1]]"%(bbox[0][0], bbox[0][1], bbox[
 sout = sout + "Ref," + ",".join(map(str,dlfreq["ref"])) + "\n"
 for rate in lrate:
     lfreq= dlfreq[rate]
-    sout = sout + "%d,"%(rate) + ",".join(map(str, dlfreq[rate])) +"\n"
+    sout = sout + "%s,"%(rate) + ",".join(map(str, dlfreq[rate])) +"\n"
 
 # Write
 baseDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS"
@@ -123,5 +127,6 @@ print filePath
 if figflag != True: sys.exit()
 for rate in ["ref"]+lrate:
     figname = oDir + "/freq.c.%s.png"%(rate)
+    cmap    = "gist_stern_r"
     stitle  = "%s"%(rate)
-    Fig.DrawMapSimple(da2dat[rate], LatHap, LonHap, vmax=0.01, cmap="jet", figname=figname, stitle=stitle)
+    Fig.DrawMapSimple(da2dat[rate], LatHap, LonHap, vmax=0.005, cmap=cmap, figname=figname, stitle=stitle)

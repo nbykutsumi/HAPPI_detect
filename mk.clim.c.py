@@ -28,7 +28,7 @@ model   = "MIROC5"
 #run     = "C20-ALL-001-190"
 #run     = "C20-ALL-001-210"
 #run     = "C20-ALL-001-220"
-run     = "C20-ALL-001-250"
+run     = "C20-ALL-001"
 res     = "128x256"
 noleap  = True
 tctype  = "notc"
@@ -41,7 +41,7 @@ cfg_det  = config_func.config_func(prj=prj, model=model, run=run)
 cfg_det["res"] = res
 
 iYear = 2006
-eYear = 2014
+eYear = 2015
 lYear = range(iYear,eYear+1)
 lMon  = range(1,12+1)
 #lMon = [1]
