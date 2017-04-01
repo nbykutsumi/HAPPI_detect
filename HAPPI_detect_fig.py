@@ -35,7 +35,7 @@ def lat2iypy(a1lat, lat):
 
 
 #********************************************************
-def DrawMap_dotshade(a2in, a2dot, a1lat, a1lon, BBox=[[-90., 0.],[90., 360.]], bnd=False, vmin=False, vmax=False, cmap="Spectral",extend="neither", white_minmax="neither", white_max=False,figname="./temp.png", cbarname=False, stitle=False, parallels=arange(-90,90+0.1, 30), meridians=arange(-180,360+0.1,30) ,maskcolor=False, dotcolor="k", dotstep=1, markersize=3, miss=-9999.):
+def DrawMap_dotshade(a2in, a2dot, a1lat, a1lon, BBox=[[-90., 0.],[90., 360.]], bnd=False, vmin=False, vmax=False, cmap="Spectral",extend="neither", white_minmax="neither", figname="./temp.png", cbarname=False, stitle=False, parallels=arange(-90,90+0.1, 30), meridians=arange(-180,360+0.1,30) ,maskcolor=False, dotcolor="k", dotstep=1, markersize=3, miss=-9999.):
 
   """
   extend= "neither","both","min","max"

@@ -129,10 +129,6 @@ def main(**kwargs):
             a3num[iens] = fromfile(numPath, int32).reshape(ny,nx)
     
     
-            if (tag == "plain")&(scen=="ALL"):
-                tempsum = a3sum[iens]
-                tempnum = a3num[iens]
-    
         # Regional values
         a3prcp = a3sum / nYear * 60*60*6   # mm/season
         a3freq = a3num / float(totaltimes)
