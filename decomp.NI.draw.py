@@ -21,13 +21,30 @@ Tag         = import_module("%s.Tag"%(detectName))
 prj     = "HAPPI"
 model   = "MIROC5"
 expr    = "C20"
-lscen   = ["P20"]
+lscen   = ["P15","P20"]
 #lscen   = ["P15","P20"]
-lens    = [1]
+lens    = [1,11,21,31,41]
 nens    = len(lens)
 res     = "128x256"
 noleap  = True
 ny, nx  = 128, 256
+
+#lthpr = [0.5]
+lthpr = [0.0]
+
+#region = "GLB"
+region = "JPN"
+
+
+if region == "GLB":
+    BBox  = [[-80,0.0],[80,360]]
+    parallels=arange(-90,90+0.1,30)
+    meridians=arange(-180,360+0.1,30)
+elif region=="JPN":
+    BBox  = [[20,120],[50,150]]
+    parallels=arange(-90,90+0.1,10)
+    meridians=arange(-180,360+0.1,10)
+
 
 ltag  = ["tc","cf","ms","ot"]
 #ltag   = []
@@ -43,11 +60,8 @@ iYear_fut, eYear_fut = 2106, 2115
 season = "ALL"
 #season = 1
 
-#lthpr = [0.5]
-lthpr = [0.0]
 ddtype = {"sum":"float32", "num":"int32"}
 hp    = HAPPI.Happi()
-BBox  = [[-80,0.0],[80,360]]
 miss  = -9999.
 #----------------------
 def ret_sthpr(thpr):
@@ -97,26 +111,18 @@ for (scen, thpr) in lKey:
         for var in ["dNI","NdI","dNdI","dP"]:
             a3var = zeros([len(lens),ny,nx],float32)
             for iens, ens in enumerate(lens):
-                dkw = {}
-                dkw["model"] = model
-                dkw["expr"]  = expr
-                dkw["scen"]  = scen
-                dkw["ens"]   = ens
-                dkw["sthpr"] = sthpr
-                dkw["season"]= season
-                dkw["tag"]   = tag
-
                 #- Load ---
-                """model, expr, scen, ens, sthpr, tag, Year, Mon"""
-                baseDir, sDir = hd_func.path_dpr(model=model, expr=expr, scen=scen, ens=ens, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var=var)[0:2]
-                sPath = hd_func.path_dpr(model=model, expr=expr, scen=scen, ens=ens, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var=var)[-1]
+                run  = "%s-%s-%03d"%(expr,scen,ens)
+                baseDir, sDir = hd_func.path_dpr(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var=var)[0:2]
+                sPath = hd_func.path_dpr(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var=var)[-1]
     
                 a3var[iens] = fromfile(sPath, float32).reshape(ny,nx)
 
             # Change
             a2var = a3var.mean(axis=0)
-            a2t   = (a2var-0.0)/( a3var.var(axis=0)/sqrt(nens))
-            a2pv  = scipy.stats.t.sf( a2t, abs(a2t), nens-1)
+            a2t   = (a2var-0.0)/sqrt( a3var.var(axis=0)/ (nens-1))
+            #a2pv  = scipy.stats.t.sf( a2t, abs(a2t), nens-1)
+            a2pv  = scipy.stats.t.sf( abs(a2t),nens-1 )*2 # Two-sided
             a2sig = ma.masked_greater(a2pv, 0.05).filled(miss)
 
             figDir= baseDir + "/fig"
@@ -125,8 +131,9 @@ for (scen, thpr) in lKey:
             bnd  = [-200,-150,-100,-50,-20,20,50,100,150,200]
             cmap = "RdBu"
 
-            figname= figDir + "/%s.th.%s.%s.%s.png"%(scen,sthpr,tag,var)
-            hd_fig.DrawMap_dotshade(a2in=a2var, a2dot=a2sig, a1lat=Lat, a1lon=Lon, BBox=BBox, bnd=bnd, cmap=cmap, figname=figname, dotstep=5, dotcolor="0.8")
+            stitle= "%s %s %s"%(scen, tag, var)
+            figname= figDir + "/%s.%s.th.%s.%s.%s.png"%(region, scen,sthpr,tag,var)
+            hd_fig.DrawMap_dotshade(a2in=a2var, a2dot=a2sig, a1lat=Lat, a1lon=Lon, BBox=BBox, bnd=bnd, parallels=parallels, meridians=meridians, cmap=cmap, stitle=stitle, figname=figname, dotstep=5, dotcolor="0.8")
 
             # Relative change [%]
 

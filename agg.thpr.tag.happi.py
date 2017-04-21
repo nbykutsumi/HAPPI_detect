@@ -24,12 +24,23 @@ Tag         = import_module("%s.Tag"%(detectName))
 prj     = "HAPPI"
 model   = "MIROC5"
 expr    = "C20"
-#lscen   = ["ALL","P20","P15"]
-lscen   = ["P20","P15"]
-lens    = [1]
+lscen   = ["ALL","P20","P15"]
+#lscen   = ["P15","P20"]
+#lscen   = ["ALL"]
+lens    = [1,11,21,31,41]
 res     = "128x256"
 noleap  = True
 ny, nx  = 128, 256
+
+
+#lthpr = [0.0,"p99.900","p99.990"]
+#lthpr = ["p99.900","p99.990"]
+#lthpr = ["p99.990"]
+lthpr = ["p99.900"]
+
+print "lscen=",lscen
+print "lthpr=",lthpr
+
 
 ret_lDTime = {False: util.ret_lDTime
              ,True : util.ret_lDTime_noleap
@@ -49,12 +60,6 @@ lMon  = range(1,12+1)
 
 lkey = [[scen, ens] for scen in lscen for ens in lens]
 
-#lthpr = [0.5,"p99.990"]
-#lthpr = ["p99.990"]
-lthpr = ["p99.900"]
-#lthpr = [0.5]
-#lthpr = [0.0]
-
 #----------------------
 def ret_sthpr(thpr):
     if type(thpr) == str:
@@ -64,7 +69,8 @@ def ret_sthpr(thpr):
     return sthpr
 
 def ret_a2thpr(thpr):
-    nYear  = 30
+    #nYear  = 30
+    nYear  = 50
     if type(thpr) == str:
         sDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/ptile"
         sPath = sDir + "/%s.%s.%s.%s.%04dY.%s.%dx%d"%(prj,model,expr, "ALL", nYear, thpr, ny, nx)     

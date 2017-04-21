@@ -29,12 +29,22 @@ expr    = "C20"
 res     = "128x256"
 noleap  = True
 ny, nx  = 128, 256
-lscen   = ["JRA","ALL","P15","P20"]
+#lscen   = ["JRA","ALL","P15","P20"]
 #lscen   = ["JRA"]
-#lscen   = ["ALL","P15","P20"]
+lscen   = ["ALL","P15","P20"]
+#lscen   = ["P15","P20"]
+#lscen   = ["P20"]
 #lthpr   = ["p99.900"]
+#lthpr   = ["p99.990"]
 #lthpr   = [0]
-lthpr   = [0,"p99.900"]
+lthpr   = [0,"p99.900","p99.990"]
+#lthpr   = ["p99.900","p99.990"]
+
+lens   = [1,11,21,31,41]
+
+#region = "GLB"
+region = "JPN"
+
 
 dieYear = {"JRA":(2006, 2014)
          ,"ALL": (2006, 2015)
@@ -42,13 +52,21 @@ dieYear = {"JRA":(2006, 2014)
          ,"P20": (2106, 2115)
          }
 
-lens   = [1]
 
 season = "ALL"
 #season = 1
 ltag   = ["tc","cf","ms","ot"]
 ddtype = {"sum":"float32", "num":"int32"}
-BBox  = [[-80,0.0],[80,360]]
+
+if region == "GLB":
+    BBox  = [[-80,0.0],[80,360]]
+    parallels=arange(-90,90+0.1,30)
+    meridians=arange(-180,360+0.1,30)
+elif region=="JPN":
+    BBox  = [[20,120],[50,150]]
+    parallels=arange(-90,90+0.1,10)
+    meridians=arange(-180,360+0.1,10)
+
 miss  = -9999.
 hp    = HAPPI.Happi()
 hp(model="MIROC5", expr=expr, scen="ALL", ens=1)
@@ -153,7 +171,7 @@ for thpr, scen in lkey:
             figDir  = baseDir + "/fig"
             print "*"*50
             print figDir
-            figname = figDir + "/%s.frac.th.%s.%s.%s.png"%(scen, sthpr, dattype, tag)
+            figname = figDir + "/%s.%s.frac.th.%s.%s.%s.png"%(region, scen, sthpr, dattype, tag)
 
             if itag==0:
                 cbarname= figDir + "/frac.cbar.png"
@@ -162,7 +180,7 @@ for thpr, scen in lkey:
 
             stitle = "%s %s %s %s"%(scen, sthpr, dattype, tag)
 
-            Fig.DrawMapSimple(a2in=a2in, a1lat=a1lat, a1lon=a1lon, BBox=BBox, bnd=bnd, extend="both", white_minmax="min", cmap=cmap, stitle=stitle, figname=figname, cbarname=cbarname, figsize=(6,3))
+            Fig.DrawMapSimple(a2in=a2in, a1lat=a1lat, a1lon=a1lon, BBox=BBox, bnd=bnd,  parallels=parallels, meridians=meridians, extend="both", white_minmax="min", cmap=cmap, stitle=stitle, figname=figname, cbarname=cbarname, figsize=(6,3))
 
            
             

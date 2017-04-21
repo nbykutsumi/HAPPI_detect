@@ -23,7 +23,7 @@ lvartype = ["Num"]
 #lthpr = [0.5]
 #lthpr = [0.0]
 #lthpr = ["p99.990"]
-lthpr = ["p99.900"]
+lthpr = ["p99.900","p99.990"]
 
 
 prj     = "HAPPI"
@@ -31,8 +31,9 @@ model   = "MIROC5"
 expr    = "C20"
 #lscen   = ["ALL","P15","P20"]
 #lscen   = ["P15","P20"]
-lscen   = ["ALL"]
-lens    = [1]
+lscen   = ["P20"]
+#lscen   = ["ALL"]
+lens    = [1,11,21,31,41]
 nens    = len(lens)
 res     = "128x256"
 noleap  = True

@@ -5,9 +5,8 @@ import HAPPI_detect_func as hd_func
 
 #
 expr    = "C20"
-#lscen   = ["JRA","ALL","P15","P20"]
-#lscen   = ["JRA"]
-lscen   = ["ALL","P15","P20"]
+#lscen   = ["P15","P20"]
+lscen   = ["P20"]
 res     = "128x256"
 
 ldattype = ["Sum","Num"]
@@ -20,8 +19,8 @@ dieYear = {"JRA":[2006,2014]
 ltag  = ["tc","cf","ms","ot"]
 lthpr  = [0,"p99.900","p99.990"]
 #lthpr  = [0]
-#region = "GLB"
-region = "JPN"
+region = "GLB"
+#region = "JPN"
 
 season = "ALL"
 iy   = 0   # top
@@ -43,19 +42,21 @@ for thpr in lthpr:
         iYear, eYear = dieYear[scen]
         da2dat  = {}
         for i, tag in enumerate(ltag):
-            if scen =="JRA":
-                model= "__"
-                run  = "__"
-            else:
-                model= "MIROC5"
-                run  = "%s-%s-001"%(expr,scen)  # only for baseDir
+            model= "MIROC5"
+            run  = "%s-%s-001"%(expr,scen)  # only for baseDir
     
-            baseDir, sDir, sumPath = hd_func.path_sumnum_clim(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear, eYear=eYear, season=season, sumnum="sum")
+#            baseDir, sDir, sumPath = hd_func.path_sumnum_clim(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear, eYear=eYear, season=season, sumnum="sum")
+
+
+            iYear_fut, eYear_fut = dieYear[scen]
+            baseDir, sDir = hd_func.path_dpr(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var=var)[0:2]
+
         
             # Figure
             figDir  = baseDir + "/fig"
-            figname = figDir + "/%s.%s.frac.th.%s.%s.%s.png"%(region, scen, sthpr, dattype, tag)
-        
+            figname = figDir + "/%s.%s.inc.frac.th.%s.%s.%s.png"%(region, scen, sthpr, dattype, tag)
+
+
             iimg    = Image.open(figname)
             a2array = asarray(iimg)
             da2dat[i] = a2array[iy:ey, ix:ex]
@@ -63,7 +64,7 @@ for thpr in lthpr:
         da2dat[-9999] = ones(da2dat[0].shape, dtype=uint8)*255
         a2oarray = vstack( [da2dat[0], da2dat[1], da2dat[2], da2dat[3]] )
         oimg     = Image.fromarray(a2oarray)
-        oPath    = figDir + "/join.%s.frac.%s.th.%s.%s.png"%(region, scen, sthpr, dattype)
+        oPath    = figDir + "/join.%s.inc.frac.%s.th.%s.%s.png"%(region, scen, sthpr, dattype)
         oimg.save(oPath)
         print oPath
     

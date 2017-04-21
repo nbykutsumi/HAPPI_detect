@@ -26,7 +26,7 @@ expr    = "C20"
 scen    = "ALL"
 
 #lens    = [1,1,1]
-lens    = [1]
+lens    = [1,11,21,31,41]
 res     = "128x256"
 noleap  = True
 ny      = 128

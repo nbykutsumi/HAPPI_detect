@@ -17,12 +17,16 @@ config_func = import_module("%s.config_func"%(detectName))
 prj     = "HAPPI"
 model   = "MIROC5"
 expr    = "C20"
-#lscen   = ["P15","P20"]
-lscen   = ["P20"]
-lens    = [1]
+lscen   = ["P15","P20"]
+#lscen   = ["P20"]
+lens    = [1,11,21,31,41]
 res     = "128x256"
 noleap  = True
 ny, nx  = 128, 256
+
+#lthpr = [0.5]
+#lthpr = [0.0]
+lthpr = [0,"p99.900","p99.990"]
 
 ltag  = ["tc","cf","ms","ot"]
 ltag_ws  = [tag for tag in ltag if tag !="ot"]
@@ -36,9 +40,6 @@ iYear_fut, eYear_fut = 2106, 2115
 season = "ALL"
 #season = 1
 
-#lthpr = [0.5]
-lthpr = [0.0]
-#lthpr = ["p99.990"]
 ddtype = {"sum":"float32", "num":"int32"}
 #----------------------
 def ret_sthpr(thpr):
@@ -52,6 +53,11 @@ def load_var(**kwargs):
     """model, expr, scen, ens, sthpr, tag, sumnum, Year, Mon"""
 
     sumnum = kwargs["sumnum"]
+    expr   = kwargs["expr"]
+    scen   = kwargs["scen"]
+    ens    = kwargs["ens"] 
+    kwargs["run"] = "%s-%s-%03d"%(expr,scen,ens)
+    kwargs["res"] = res
     sPath = hd_func.path_sumnum(**kwargs)[-1]
 
     return fromfile(sPath, dtype=ddtype[sumnum]).reshape(ny,nx) 
@@ -84,15 +90,6 @@ for (scen, thpr) in lKey:
     sthpr= ret_sthpr(thpr)
     for ens in lens:
         for tag in ltag + ["plain"]:
-            dkw = {}
-            dkw["model"] = model
-            dkw["expr"]  = expr
-            dkw["scen"]  = scen
-            dkw["ens"]   = ens
-            dkw["sthpr"] = sthpr
-            dkw["season"]= season
-            dkw["tag"]   = tag
-
             sum_his=mk_clim(model=model, expr=expr, scen="ALL", ens=ens, sthpr=sthpr, tag=tag, sumnum="sum", iYear=iYear_his, eYear=eYear_his, season=season)
             sum_fut=mk_clim(model=model, expr=expr, scen=scen, ens=ens, sthpr=sthpr, tag=tag, sumnum="sum", iYear=iYear_fut, eYear=eYear_fut, season=season)
         
@@ -117,13 +114,15 @@ for (scen, thpr) in lKey:
         
             #- Save ---
             """model, expr, scen, ens, sthpr, tag, Year, Mon"""
-    
-            sDir = hd_func.path_dpr(model=model, expr=expr, scen=scen, ens=ens, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var="dNI")[1]
 
-            dNIpath = hd_func.path_dpr(model=model, expr=expr, scen=scen, ens=ens, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var="dNI")[-1]
-            NdIpath = hd_func.path_dpr(model=model, expr=expr, scen=scen, ens=ens, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var="NdI")[-1]
-            dNdIpath = hd_func.path_dpr(model=model, expr=expr, scen=scen, ens=ens, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var="dNdI")[-1]
-            dPpath = hd_func.path_dpr(model=model, expr=expr, scen=scen, ens=ens, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var="dP")[-1]
+            run  = "%s-%s-%03d"%(expr,scen,ens)
+    
+            sDir = hd_func.path_dpr(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var="dNI")[1]
+
+            dNIpath = hd_func.path_dpr(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var="dNI")[-1]
+            NdIpath = hd_func.path_dpr(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var="NdI")[-1]
+            dNdIpath = hd_func.path_dpr(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var="dNdI")[-1]
+            dPpath = hd_func.path_dpr(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var="dP")[-1]
 
             util.mk_dir(sDir)
             dNI .astype(float32).tofile(dNIpath)

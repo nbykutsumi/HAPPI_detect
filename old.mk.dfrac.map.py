@@ -30,10 +30,9 @@ res     = "128x256"
 noleap  = True
 ny, nx  = 128, 256
 lscen   = ["P15","P20"]
-#lthpr   = ["p99.990"]
 #lthpr   = ["p99.900"]
-lthpr   = [0]
-#lthpr   = [0,"p99.900","p99.990"]
+#lthpr   = [0]
+lthpr   = [0,"p99.900","p99.990"]
 
 region = "GLB"
 #region = "JPN"
@@ -79,10 +78,10 @@ lkey = [[thpr, scen] for thpr in lthpr for scen in lscen]
 for thpr in lthpr:
     sthpr = ret_sthpr(thpr)
 
-    a3Sum = {}
-    a3Num = {}
-    a3FracSum = {}
-    a3FracNum = {}
+    Sum = {}
+    Num = {}
+    FracSum = {}
+    FracNum = {}
 
     for scen in ["ALL"] + lscen:
         for tag in ["plain"]+ltag:
@@ -105,61 +104,43 @@ for thpr in lthpr:
                 a3sum[iens] = fromfile(sumPath, float32).reshape(ny,nx)
                 a3num[iens] = fromfile(numPath, int32).reshape(ny,nx)
             
-            #Sum[scen, tag] = a3sum.mean(axis=0)
-            #Num[scen, tag] = a3num.mean(axis=0)
+            Sum[scen, tag] = a3sum.mean(axis=0)
+            Num[scen, tag] = a3num.mean(axis=0)
         
-            a3Sum[scen, tag] = a3sum
-            a3Num[scen, tag] = a3num
    
     #-- Frac  ---------------
     for scen in ["ALL"] + lscen:
         for tag in ltag:
-            a3FracSum[scen,tag] = ma.masked_invalid(a3Sum[scen,tag]/a3Sum[scen,"plain"]).filled(miss)
-            a3FracNum[scen,tag] = ma.masked_invalid(a3Num[scen,tag]
-                            /a3Num[scen,"plain"].astype(float32)).filled(miss)
+            FracSum[scen,tag] = ma.masked_invalid(Sum[scen,tag]/Sum[scen,"plain"]).filled(miss)
+            FracNum[scen,tag] = ma.masked_invalid(Num[scen,tag]
+                            /Num[scen,"plain"].astype(float32)).filled(miss)
 
     #-- dFrac ---------------
-    a3dFracSum = {}
-    a3dFracNum = {}
+    dFracSum = {}
+    dFracNum = {}
     for scen in lscen:
         for tag in ltag:        
-            a3dFracSum[scen,tag] = a3FracSum[scen,tag] - a3FracSum["ALL",tag] 
-            a3dFracNum[scen,tag] = a3FracNum[scen,tag] - a3FracNum["ALL",tag]
+            dFracSum[scen,tag] = FracSum[scen,tag] - FracSum["ALL",tag] 
+            dFracNum[scen,tag] = FracNum[scen,tag] - FracNum["ALL",tag]
 
     #-- Figure --------------
     for dattype in ["Num","Sum"]:
         if   dattype=="Num":
-            Dat = a3dFracNum
+            Dat = dFracNum
         elif dattype=="Sum":
-            Dat = a3dFracSum
+            Dat = dFracSum
 
         for scen in lscen: 
             for itag, tag in enumerate(ltag):
                 run = "%s-%s-%03d"%(expr, scen, 1)
     
-                a2in = Dat[scen,tag].mean(axis=0)
-
-                # significance test
-                a2t  = (a2in-0.0)/sqrt(Dat[scen,tag].var(axis=0)/(len(lens)-1))
-                a2pv = scipy.stats.t.sf( abs(a2t), len(lens)-1)*2
-
-                # mask
-                a2in = ma.masked_where(a2pv >0.05, a2in)
-                #atemp = ma.masked_where(a2pv >0.05, a2in)
-                #atempstd=sqrt(Dat[scen,tag].var(axis=0))
-
-
-
+                a2in = Dat[scen,tag]
                 cmap = "RdBu"
                 bnd  = [-0.2, -0.15, -0.05, 0.05, 0.15, 0.2]
     
                 # Name
-                #baseDir, sDir, sumPath = hd_func.path_sumnum_clim(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear, eYear=eYear, season=season, sumnum="sum")
-
-                iYear_fut, eYear_fut = dieYear[scen]
-                baseDir, sDir = hd_func.path_dpr(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var=var)[0:2]
-
- 
+                baseDir, sDir, sumPath = hd_func.path_sumnum_clim(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear, eYear=eYear, season=season, sumnum="sum")
+    
                 figDir  = baseDir + "/fig"
                 print "*"*50
                 print figDir
@@ -172,30 +153,7 @@ for thpr in lthpr:
     
                 stitle = "%s %s %s %s"%(scen, sthpr, dattype, tag)
     
-                Fig.DrawMapSimple(a2in=a2in, a1lat=a1lat, a1lon=a1lon, BBox=BBox, bnd=bnd, parallels=parallels, meridians=meridians,  extend="both", white_minmax="center", cmap=cmap, stitle=stitle, figname=figname, cbarname=cbarname, maskcolor="gray", figsize=(6,3))
+                Fig.DrawMapSimple(a2in=a2in, a1lat=a1lat, a1lon=a1lon, BBox=BBox, bnd=bnd, parallels=parallels, meridians=meridians,  extend="both", white_minmax="center", cmap=cmap, stitle=stitle, figname=figname, cbarname=cbarname, figsize=(6,3))
     
-
-#                #******* test ************
-#                for iens, ens in enumerate(lens):
-#                
-#                    figname = figDir + "/temp.%s.%s.inc.frac.th.%s.%s.%s.%d.png"%(region, scen, sthpr, dattype, tag, iens) 
-#                    if itag==0:
-#                        cbarname= figDir + "/cbar.temp.inc.frac.png"
-#                    else:
-#                        cbarname= False
-#        
-#                    stitle = "%s %s %s %s"%(scen, sthpr, dattype, tag)
-#    
-#                    #bnd = arange(-1,1.0+0.01,0.2)
-#                    bnd = array([-0.2,-0.15,-0.1,-0.05,0.05, 0.1, 0.15, 0.2])
-#        
-#                    Fig.DrawMapSimple(a2in=Dat[scen,tag][iens], a1lat=a1lat, a1lon=a1lon, BBox=BBox, bnd=bnd, parallels=parallels, meridians=meridians,  extend="both", white_minmax="center", cmap=cmap, stitle=stitle, figname=figname, cbarname=cbarname, figsize=(6,3))
-#        
-#                   
-#               
-#                    print "*"*50
-#                    print dattype, scen, tag
-#                if (dattype=="Sum")&(tag == "cf"):
-#                    sys.exit()
-    
-    
+               
+            

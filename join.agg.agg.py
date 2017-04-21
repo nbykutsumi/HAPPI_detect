@@ -12,7 +12,8 @@ import HAPPI_detect_func as hd_func
 model   = "MIROC5"
 expr    = "C20"
 run     = "C20-ALL-001"   # only for baseDir, no need to change
-lscen   = ["ALL","P15","P20"]
+#lscen   = ["ALL","P15","P20"]
+lscen   = ["P15","P20"]
 res     = "128x256"
 
 dieYear = {"JRA55":[2006,2014]
@@ -22,7 +23,7 @@ dieYear = {"JRA55":[2006,2014]
           }
 
 ltag  = ["plain"] + ["tc","cf","ms","ot"]
-thpr  = 0
+thpr   = 0
 season = "ALL"
 #----------------------
 def ret_sthpr(thpr):
@@ -58,4 +59,4 @@ for scen in lscen:
     oimg.save(oPath)
     print oPath
 
-    
+

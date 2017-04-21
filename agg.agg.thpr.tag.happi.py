@@ -17,17 +17,20 @@ config_func = import_module("%s.config_func"%(detectName))
 prj     = "HAPPI"
 model   = "MIROC5"
 expr    = "C20"
-#lscen   = ["ALL","P15","P20"]
+lscen   = ["ALL","P15","P20"]
 #lscen   = ["P15","P20"]
-lscen   = ["P15"]
-lens    = [1]
+#lscen   = ["ALL"]
+lens    = [1,11,21,31,41]
 res     = "128x256"
 noleap  = True
 ny, nx  = 128, 256
 
+#lthpr = [0,"p99.900","p99.990"]
+#lthpr = [0,"p99.900"]
+#lthpr = ["p99.900","p99.990"]
 #lthpr = ["p99.990"]
-lthpr = ["p99.900"]
-
+#lthpr = ["p99.900"]
+lthpr  = [0]
 
 ltag  = ["tc","cf","ms","ot"]
 ltag_ws  = [tag for tag in ltag if tag !="ot"]
