@@ -35,7 +35,7 @@ model   = "MIROC5"
 expr    = "C20"
 #lscen   = ["ALL"]
 lscen   = ["JRA","ALL","P15","P20"]
-lens    = [1,1,1,1,1]
+lens    = [1,11,21,31,41]
 nens    = len(lens)
 res     = "128x256"
 noleap  = True
@@ -228,6 +228,13 @@ for thpr in lthpr:
                     da1pint[tag, scen, region] = [pint]*len(lens)
 
     #-- Write by Region ---------
+    iYear_fut, eYear_fut = dieYear["P20"]
+    run  = "C20-P15-001"
+    baseDir, sDir = hd_func.path_dpr(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear_fut, eYear=eYear_fut, season=season, var="dP")[0:2]
+
+
+
+    
     oDir= baseDir + "/csv"
     util.mk_dir(oDir)
 

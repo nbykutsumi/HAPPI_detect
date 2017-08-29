@@ -5,27 +5,19 @@ import HAPPI_detect_func as hd_func
 
 model      = "MIROC5"
 res        = "128x256"
-
-#regiontype = "JPN"
+regiontype = "JPN"
 #lregion    = ["GLB","JPN","S.ISLES","KYUSHU","SHIKOKU","CHUGOKU","KINKI","SE.JPN","NW.JPN","NE.JPN","HOKKAIDO"]
-
-regiontype = "IPCC"
-lregion     = ["ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA","MED","NAS","NAU","NEB","NEU","SAF","SAH","SAS","SAU","SSA","SEA","TIB","WAF","WAS","WSA","WNA"]
-
-
-
-#lregion    = ["HOKKAIDO"]
-#lens       = [1,11,21,31,41]
-lens       = range(1,50+1)
+lregion    = ["HOKKAIDO"]
+lens       = [1,11,21,31,41]
+#lens       = range(1,50+1)
 #lthpr      = [0,"p99.900","p99.990"]
-#lthpr      = ["p99.900","p99.990"]
 lthpr      = [0]
-#lvartype   = ["Ptot"]
-lvartype   = ["Freq","Ptot"]
+lvartype   = ["Ptot"]
+#lvartype   = ["Freq","Ptot"]
 lscen      = ["JRA","ALL","P15","P20"]
 ltag       = ["plain","tc","cf","ms","ot"]
 
-wbar       = 0.8
+wbar       = 0.6
 yfontsize  = 17
 
 dieYear = {"JRA":[2006,2014]
@@ -37,6 +29,24 @@ dieYear = {"JRA":[2006,2014]
 
 season     = "ALL"
 #**********************************
+def ret_bottom(lv, idat):
+  if idat == 0:
+    bottom = 0
+  else:
+    bottom_posi  = 0.0
+    bottom_nega  = 0.0
+    for i,v in enumerate(lv[:idat]):
+      if v >=0:
+        bottom_posi = bottom_posi + v
+      elif v <0:
+        bottom_nega = bottom_nega + v
+    #-------
+    if lv[idat] >=0:
+      bottom = bottom_posi
+    elif lv[idat] <0:
+      bottom = bottom_nega
+  return bottom
+
 def ret_xlabel(scen):
     if scen=="JRA":
         return "JRA"
@@ -82,41 +92,27 @@ for thpr in lthpr:
         
         
             for iscen,scen in enumerate(lscen):
-                offset = wbar*6
-                xpl = wbar*1.2*iscen
-                xtc = wbar*1.2*iscen + offset
-                xcf = wbar*1.2*iscen + offset*2
-                xms = wbar*1.2*iscen + offset*3
-                xot = wbar*1.2*iscen + offset*4
-                
-                vpl = mean(Var[region,"plain",scen])
+                x   = iscen + wbar*0.5
                 vtc = mean(Var[region,"tc",scen])
                 vcf = mean(Var[region,"cf",scen])
                 vms = mean(Var[region,"ms",scen])
                 vot = mean(Var[region,"ot",scen])
             
-                epl = Var[region,"plain",scen].std()
-                etc = Var[region,"tc",scen].std()
-                ecf = Var[region,"cf",scen].std()
-                ems = Var[region,"ms",scen].std()
-                eot = Var[region,"ot",scen].std()
+                ltmp= [vtc, vcf, vms, vot]
+                btc = ret_bottom(ltmp, 0)
+                bcf = ret_bottom(ltmp, 1)
+                bms = ret_bottom(ltmp, 2)
+                bot = ret_bottom(ltmp, 3)
 
+                err = Var[region,"plain",scen].std()
            
-                axplot.bar(xpl, vpl, width=wbar, color="gray") 
-                axplot.bar(xtc, vtc, width=wbar, color="r") 
-                axplot.bar(xcf, vcf, width=wbar, color="deepskyblue") 
-                axplot.bar(xms, vms, width=wbar, color="pink") 
-                axplot.bar(xot, vot, width=wbar, color="gold")
+                xlabel = ret_xlabel(scen)
 
-                axplot.errorbar(xpl, vpl, epl, color="k", linewidth=1) 
-                axplot.errorbar(xtc, vtc, etc, color="k", linewidth=1) 
-                axplot.errorbar(xcf, vcf, ecf, color="k", linewidth=1) 
-                axplot.errorbar(xms, vms, ems, color="k", linewidth=1) 
-                axplot.errorbar(xot, vot, eot, color="k", linewidth=1) 
-
-            #--- bottom line --------------------
-            plt.axhline(0, color="black")
-
+                axplot.bar(x, vtc, width=wbar, color="r", tick_label=xlabel) 
+                axplot.bar(x, vcf, width=wbar, bottom=bcf, color="deepskyblue") 
+                axplot.bar(x, vms, width=wbar, bottom=bms, color="pink") 
+                axplot.bar(x, vot, width=wbar, bottom=bot, color="gold")
+                axplot.errorbar(x+wbar*0.5, bot+vot, err, color="k", linewidth=1.5) 
     
             #--- no bottom ticks, y-ticklabel ----
             axplot.tick_params(bottom="off",labelbottom="off", labelsize=yfontsize)

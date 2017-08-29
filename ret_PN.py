@@ -81,7 +81,7 @@ def calc_totaltimes(iYear,eYear,season):
 
 
 
-def ret_regionmask(regiontype, region):
+def ret_regionmask(regiontype, region, lndsea=None):
     if regiontype=="IPCC":
         a2region= hd_func.ret_a2region_ipcc(region, ny, nx)
     elif regiontype=="JPN":
@@ -92,6 +92,22 @@ def ret_regionmask(regiontype, region):
         print "by",__file__
         print inspect.currentframe().f_code.co_name
         sys.exit()
+
+    if   lndsea == None:
+        pass
+    elif lndsea == "lnd":
+        a2lndfrc = hp.load_const("lndfrc") 
+        a2region = ma.masked_where(a2lndfrc ==0.0, a2region).filled(miss)
+    elif lndsea == "sea":
+        a2lndfrc = hp.load_const("lndfrc") 
+        a2region = ma.masked_where(a2lndfrc >0.0, a2region).filled(miss)
+    else:
+        print "check lndsea",lndsea
+        print "must be None / lnd / sea"
+        print "by",__file__
+        print inspect.currentframe().f_code.co_name
+        sys.exit()
+
     return a2region
 #----------------------
 def main(**kwargs):
@@ -102,6 +118,7 @@ def main(**kwargs):
     regiontype = kwargs["regiontype"]
     lregion    = kwargs["lregion"]
     lens       = kwargs["lens"]
+    lndsea     = kwargs["lndsea"]
     nens       = len(lens)
 
 
@@ -136,7 +153,7 @@ def main(**kwargs):
     
         for region in lregion:
             #a2region = hd_func.ret_a2region_ipcc(region, ny, nx)
-            a2region = ret_regionmask(regiontype,region)
+            a2region = ret_regionmask(regiontype,region,lndsea)
             a1prcp = [ma.masked_where(a2region==0., a3prcp[i]).mean()
                     for i in range(len(lens))]
     
@@ -148,9 +165,9 @@ def main(**kwargs):
                     for i in range(len(lens))]
     
     
-            da1prcp[region] = a1prcp
-            da1freq[region] = a1freq
-            da1pint[region] = a1pint
+            da1prcp[region] = array(a1prcp)
+            da1freq[region] = array(a1freq)
+            da1pint[region] = array(a1pint)
     
     elif scen =="JRA":
         iYear, eYear = dieYear[scen]
@@ -189,9 +206,9 @@ def main(**kwargs):
             freq = ma.masked_where(a2region==0., a2freq).mean()
             pint = ma.masked_where(a2region==0., a2pint).mean()
     
-            da1prcp[region] = [prcp]*len(lens)
-            da1freq[region] = [freq]*len(lens)
-            da1pint[region] = [pint]*len(lens)
+            da1prcp[region] = array([prcp]*len(lens))
+            da1freq[region] = array([freq]*len(lens))
+            da1pint[region] = array([pint]*len(lens))
     
 
     #-- return --------------

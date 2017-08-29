@@ -21,9 +21,9 @@ Tag         = import_module("%s.Tag"%(detectName))
 prj     = "HAPPI"
 model   = "MIROC5"
 expr    = "C20"
-lscen   = ["P15","P20"]
+lscen   = ["P20"]
 #lscen   = ["P15","P20"]
-lens    = [1,11,21,31,41]
+lens    = range(1,30+1)
 nens    = len(lens)
 res     = "128x256"
 noleap  = True
@@ -32,8 +32,8 @@ ny, nx  = 128, 256
 #lthpr = [0.5]
 lthpr = [0.0]
 
-#region = "GLB"
-region = "JPN"
+region = "GLB"
+#region = "JPN"
 
 
 if region == "GLB":
@@ -47,7 +47,7 @@ elif region=="JPN":
 
 
 ltag  = ["tc","cf","ms","ot"]
-#ltag   = []
+#ltag   = ["ms"]
 ltag_ws  = [tag for tag in ltag if tag !="ot"]
 ltag_2nd = ["ms"]
 
@@ -108,7 +108,7 @@ for (scen, thpr) in lKey:
 
     sthpr= ret_sthpr(thpr)
     for tag in ltag + ["plain"]:
-        for var in ["dNI","NdI","dNdI","dP"]:
+        for ivar, var in enumerate(["dNI","NdI","dNdI","dP"]):
             a3var = zeros([len(lens),ny,nx],float32)
             for iens, ens in enumerate(lens):
                 #- Load ---
@@ -124,6 +124,7 @@ for (scen, thpr) in lKey:
             #a2pv  = scipy.stats.t.sf( a2t, abs(a2t), nens-1)
             a2pv  = scipy.stats.t.sf( abs(a2t),nens-1 )*2 # Two-sided
             a2sig = ma.masked_greater(a2pv, 0.05).filled(miss)
+            a2sig = ma.masked_where(abs(a2var) <20, a2sig).filled(miss)
 
             figDir= baseDir + "/fig"
             util.mk_dir(figDir)
@@ -132,8 +133,16 @@ for (scen, thpr) in lKey:
             cmap = "RdBu"
 
             stitle= "%s %s %s"%(scen, tag, var)
-            figname= figDir + "/%s.%s.th.%s.%s.%s.png"%(region, scen,sthpr,tag,var)
-            hd_fig.DrawMap_dotshade(a2in=a2var, a2dot=a2sig, a1lat=Lat, a1lon=Lon, BBox=BBox, bnd=bnd, parallels=parallels, meridians=meridians, cmap=cmap, stitle=stitle, figname=figname, dotstep=5, dotcolor="0.8")
+            figname=  figDir + "/%s.%s.th.%s.%s.%s.png"%(region, scen,sthpr,tag,var)
+
+            if var =="dP":
+                cbarname= figDir + "/cbar.decomp.png"
+                print "*"*50
+                print cbarname
+            else:
+                cbarname= False
+
+            hd_fig.DrawMap_dotshade(a2in=a2var, a2dot=a2sig, a1lat=Lat, a1lon=Lon, BBox=BBox, bnd=bnd, parallels=parallels, meridians=meridians, cmap=cmap, stitle=stitle, figname=figname, cbarname=cbarname, dotstep=5, dotcolor="0.8")
 
             # Relative change [%]
 

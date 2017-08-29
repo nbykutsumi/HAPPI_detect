@@ -20,27 +20,43 @@ Cyclone     = import_module("%s.Cyclone"%(detectName))
 
 prj     = "HAPPI"
 model   = "MIROC5"
-run     = "C20-ALL-001"
+expr    ="C20"
+lscen   = ["ALL","P20","P15"]
+#lscen   = ["ALL"]
+#lens    = [1,11,21,31,41]
+lens    = range(1,50+1)
+#lens    = [49]
 res     = "128x256"
 noleap  = True
 #tctype  = "notc"
 tctype  = "obj"
 
-cfg_det  = config_func.config_func(prj=prj, model=model, run=run)
-cfg_det["res"] = res
+lkey = [[scen, ens] for scen in lscen for ens in lens]
+for scen, ens in lkey:
+    run  = "%s-%s-%03d"%(expr, scen, ens)
+    cfg_det  = config_func.config_func(prj=prj, model=model, run=run)
+    cfg_det["res"] = res
+    
+    baseDir = cfg_det["baseDir"]
 
-baseDir = cfg_det["baseDir"]
 
-lvar = ["run.mean","age","dura","ipos","pgrad","vortlw","epos","idate","nextpos","prepos"]
 
-dPath = {}
-for var in lvar:
-  if var == "run.mean":
-    dPath[var] = baseDir + "/%s"%(var)
-  else:
-    dPath[var] = baseDir + "/6hr/%s"%(var)
 
-  print dPath[var]
-  print os.path.exists(dPath[var])
-  if os.path.exists(dPath[var]):
-    shutil.rmtree(dPath[var])
+    lvar = ["run.mean","age","dura","ipos","pgrad","vortlw","epos","idate","nextpos","prepos"]
+    
+    dPath = {}
+    for var in lvar:
+      if var == "run.mean":
+        dPath[var] = baseDir + "/%s"%(var)
+      else:
+        dPath[var] = baseDir + "/6hr/%s"%(var)
+    
+      print dPath[var]
+      print os.path.exists(dPath[var])
+      if os.path.exists(dPath[var]):
+        shutil.rmtree(dPath[var])
+
+
+
+
+

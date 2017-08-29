@@ -161,6 +161,13 @@ def ret_regionBBox(region):
     lllat = 22.0
     urlon = 155
     urlat = 50.0
+  elif region == "GLB":
+    lllon = 0.0
+    lllat = -80.0
+    urlon = 359.9
+    urlat = 80.0
+
+
   elif region == "S.ISLES":
     lllon = 122.0
     lllat = 22.0

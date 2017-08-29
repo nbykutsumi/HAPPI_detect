@@ -124,7 +124,7 @@ def DrawMap_dotshade(a2in, a2dot, a1lat, a1lon, BBox=[[-90., 0.],[90., 360.]], b
   Xdot = ma.masked_where(a2dot==miss, Xmid)[::dotstep,::dotstep]
   Ydot = ma.masked_where(a2dot==miss, Ymid)[::dotstep,::dotstep]
   #im   = M.plot(Xdot, Ydot, "o", markersize=3, color=dotcolor="k")
-  M.plot(Xdot, Ydot, "o", markersize=3, color=dotcolor)
+  M.plot(Xdot, Ydot, "o", markersize=markersize, color=dotcolor)
 
   # coastline ---
   M.drawcoastlines()
@@ -148,7 +148,7 @@ def DrawMap_dotshade(a2in, a2dot, a1lat, a1lon, BBox=[[-90., 0.],[90., 360.]], b
   # colorbar ----
   if type(cbarname) != bool:
     figcbar    = plt.figure(figsize=(5, 0.6))
-    axcbar     = figcbar.add_axes([0,0.4,1.0,0.58])
+    axcbar     = figcbar.add_axes([0.1,0.4,0.8,0.58])
     boundaries = bnd
     plt.colorbar(im, boundaries=boundaries, extend=extend, cax=axcbar, orientation="horizontal")
     figcbar.savefig(cbarname)

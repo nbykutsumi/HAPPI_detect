@@ -11,8 +11,8 @@ res     = "128x256"
 
 #lthpr  = [0,"p99.900","p99.990"]
 lthpr  = [0]
-#region = "GLB"
-region = "JPN"
+region = "GLB"
+#region = "JPN"
 
 dieYear = {"JRA":[2006,2014]
           ,"ALL": [2006,2015]
