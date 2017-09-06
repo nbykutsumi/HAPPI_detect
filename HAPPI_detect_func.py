@@ -226,3 +226,54 @@ def ret_regionBBox(region):
   return [[lllat,lllon],[urlat,urlon]] 
 
 
+def dict_IPCC_codeKey():
+    l=[
+ ['Alaska/N.W. Canada [ALA:1]', 'ALA', 'land'],
+ ['Amazon [AMZ:7]', 'AMZ', 'land'],
+ ['Central America/Mexico [CAM:6]', 'CAM', 'land'],
+ ['small islands regions Caribbean', 'CAR*', 'all'],
+ ['Central Asia [CAS:20]', 'CAS', 'land'],
+ ['Central Europe [CEU:12]', 'CEU', 'land'],
+ ['Canada/Greenland/Iceland [CGI:2]', 'CGI', 'land'],
+ ['Central North America [CNA:4]', 'CNA', 'land'],
+ ['East Africa [EAF:16]', 'EAF', 'land'],
+ ['East Asia [EAS:22]', 'EAS', 'land'],
+ ['East North America [ENA:5]', 'ENA', 'land'],
+ ['South Europe/Mediterranean [MED:13]', 'MED', 'land'],
+ ['North Asia [NAS:18]', 'NAS', 'land'],
+ ['North Australia [NAU:25]', 'NAU', 'land'],
+ ['North-East Brazil [NEB:8]', 'NEB', 'land'],
+ ['North Europe [NEU:11]', 'NEU', 'land'],
+ ['Southern Africa [SAF:17]', 'SAF', 'land'],
+ ['Sahara [SAH:14]', 'SAH', 'land'],
+ ['South Asia [SAS:23]', 'SAS', 'land; sea'],
+ ['South Australia/New Zealand [SAU:26]', 'SAU', 'land'],
+ ['Southeast Asia [SEA:24]', 'SEA', 'land; sea'],
+ ['Southeastern South America [SSA:10]', 'SSA', 'land'],
+ ['Tibetan Plateau [TIB:21]', 'TIB', 'land'],
+ ['West Africa [WAF:15]', 'WAF', 'land'],
+ ['West Asia [WAS:19]', 'WAS', 'land'],
+ ['West North America [WNA:3]', 'WNA', 'land'],
+ ['West Coast South America [WSA:9]', 'WSA', 'land'],
+ ['Antarctica', 'ANT*', 'land; sea'],
+ ['Arctic', 'ARC*', 'land; sea'],
+ ['Pacific Islands region[2]', 'NTP*', 'all'],
+ ['Southern Topical Pacific', 'STP*', 'all'],
+ ['Pacific Islands region[3]', 'ETP*', 'all'],
+ ['West Indian Ocean', 'WIO*', 'all']]
+
+    d={}
+    for dat in l:
+        longName= dat[0].split("[")[0].strip()
+
+        if len(dat[0].split(":"))==1:
+            regNum  = -9999
+        else:
+            regNum  = int(dat[0].split(":")[1][:-1])
+
+        code    = dat[1]
+        d[code] = [longName,regNum]
+        print "code=",code
+
+    return d
+

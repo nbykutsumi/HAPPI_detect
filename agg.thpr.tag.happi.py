@@ -25,25 +25,27 @@ prj     = "HAPPI"
 model   = "MIROC5"
 expr    = "C20"
 #lscen   = ["ALL","P20","P15"]
-#lscen   = ["ALL"]
-#lscen   = ["P15"]
+#lscen   = ["P15","P20"]
+lscen   = ["P15"]
 #lscen   = ["P20"]
-lscen   = ["P15","P20"]
+#lscen   = ["P15"]
 #lens    = [2,3,4,5,6,7,8,9,10]
 #lens    = range(12,20+1) + range(22,30+1)
 #lens    = range(32,40+1) + range(42,50+1)
-lens    = range(1,50+1)
-#lens    = range(42,50+1)
+#lens    = range(1,50+1)
+#lens    = range(10,50+1)
+lens    = [8,9]
 res     = "128x256"
 noleap  = True
 ny, nx  = 128, 256
 
 
 #lthpr = [0.0,"p99.900","p99.990"]
-lthpr = ["p99.900","p99.990"]
+#lthpr = ["p99.900","p99.990"]
 #lthpr = ["p99.990"]
 #lthpr = ["p99.900"]
 #lthpr = [0.0]
+lthpr = [1.0]
 
 print "lscen=",lscen
 print "lthpr=",lthpr

@@ -97,10 +97,10 @@ def ret_regionmask(regiontype, region, lndsea=None):
         pass
     elif lndsea == "lnd":
         a2lndfrc = hp.load_const("lndfrc") 
-        a2region = ma.masked_where(a2lndfrc ==0.0, a2region).filled(miss)
+        a2region = ma.masked_where(a2lndfrc ==0.0, a2region).filled(0.)
     elif lndsea == "sea":
         a2lndfrc = hp.load_const("lndfrc") 
-        a2region = ma.masked_where(a2lndfrc >0.0, a2region).filled(miss)
+        a2region = ma.masked_where(a2lndfrc >0.0, a2region).filled(0.)
     else:
         print "check lndsea",lndsea
         print "must be None / lnd / sea"
@@ -165,9 +165,9 @@ def main(**kwargs):
                     for i in range(len(lens))]
     
     
-            da1prcp[region] = array(a1prcp)
-            da1freq[region] = array(a1freq)
-            da1pint[region] = array(a1pint)
+            da1prcp[region] = ma.masked_invalid(array(a1prcp)).filled(0.0)
+            da1freq[region] = ma.masked_invalid(array(a1freq)).filled(0.0)
+            da1pint[region] = ma.masked_invalid(array(a1pint)).filled(0.0)
     
     elif scen =="JRA":
         iYear, eYear = dieYear[scen]
@@ -213,3 +213,82 @@ def main(**kwargs):
 
     #-- return --------------
     return da1prcp, da1freq, da1pint
+
+
+
+
+
+def load_Freq(**kwargs):
+
+    tag        = kwargs["tag"]
+    scen       = kwargs["scen"]
+    thpr       = kwargs["thpr"]
+    regiontype = kwargs["regiontype"]
+    lregion    = kwargs["lregion"]
+    lens       = kwargs["lens"]
+    lndsea     = kwargs["lndsea"]
+    nens       = len(lens)
+
+    sumnum = "num"
+    dtype  = {"sum":float32, "num":int32}[sumnum]
+    sthpr= ret_sthpr(thpr)
+    da1freq = {}
+
+    if scen !="JRA":
+        iYear, eYear = dieYear[scen]
+        nYear = eYear - iYear +1
+        totaltimes = calc_totaltimes(iYear,eYear,season)
+        a3var = empty([len(lens),ny,nx],float32)
+        for iens, ens in enumerate(lens):
+            run = "%s-%s-%03d"%(expr, scen, ens)
+    
+            #- Load ---
+            baseDir, sDir, varPath = hd_func.path_sumnum_clim(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear, eYear=eYear, season=season, sumnum=sumnum)
+    
+            a3var[iens] = fromfile(varPath, dtype=dtype).reshape(ny,nx)
+    
+        # Regional values
+        a3freq = a3var / float(totaltimes)
+    
+        for region in lregion:
+            #a2region = hd_func.ret_a2region_ipcc(region, ny, nx)
+            a2region = ret_regionmask(regiontype,region,lndsea)
+    
+            a1freq = [ma.masked_where(a2region==0., a3freq[i]).mean()
+                    for i in range(len(lens))]
+    
+            da1freq[region] = ma.masked_invalid(array(a1freq)).filled(0.0)
+    
+    elif scen =="JRA":
+        iYear, eYear = dieYear[scen]
+        nYear = eYear - iYear +1
+        totaltimes = calc_totaltimes(iYear,eYear,season)
+    
+        # JRA55
+        jravar ={}
+    
+        baseDir, sDir, varPath = hd_func.path_sumnum_clim(model="__", run="__", res="145x288", sthpr=sthpr, tag=tag, iYear=iYear, eYear=eYear, season=season, sumnum=sumnum)
+        
+        a2var = fromfile(sumPath, dtype=dtype).reshape(145,288)
+    
+        jravar[tag] = a2var
+     
+        # Regional values
+        a2freq = a2var / float(totaltimes)
+        
+        for region in lregion:
+            if regiontype=="IPCC":
+                a2region = hd_func.ret_a2region_ipcc(region, 145, 288)
+            elif regiontype=="JPN":
+                BBox    = hd_func.ret_regionBBox(region)
+                a2region= grids.mk_mask_BBox(LatJRA, LonJRA, BBox)
+    
+    
+    
+            freq = ma.masked_where(a2region==0., a2freq).mean()
+    
+            da1freq[region] = array([freq]*len(lens))
+    
+
+    #-- return --------------
+    return da1freq

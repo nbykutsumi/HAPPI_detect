@@ -5,7 +5,7 @@ import numpy as np
 import scipy.stats
 import matplotlib.pyplot as plt
 import HAPPI_detect_func as hd_func
-import f_draw_hist
+import f_draw_boxplot
 from numpy import *
 import sys
 
@@ -19,7 +19,7 @@ res        = "128x256"
 
 regiontype = "IPCC"
 lregion     = ["ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA","MED","NAS","NAU","NEB","NEU","SAF","SAH","SAS","SAU","SSA","SEA","TIB","WAF","WAS","WSA","WNA"]
-#lregion    = ["EAS","ALA"]
+#lregion    = ["EAS"]
 
 
 
@@ -41,21 +41,29 @@ dieYear = {"JRA":[2006,2014]
 
 dTagName   = {"plain":"All","tc":"TC","cf":"ExC","ms":"MS","ot":"OT"}
 season     = "ALL"
+
+dregInfo   = hd_func.dict_IPCC_codeKey()
 #---------------------------------    
 # Dirs
 iYear_fut, eYear_fut = dieYear["P20"]
 run  = "C20-P15-001"
-baseDir, sDir = hd_func.path_dpr(model=model, run=run, res=res, sthpr=0, tag="plain", iYear=iYear_fut, eYear=eYear_fut, season=season, var="dP")[0:2]
+#baseDir, sDir = hd_func.path_dpr(model=model, run=run, res=res, sthpr=0, tag="plain", iYear=iYear_fut, eYear=eYear_fut, season=season, var="dP")[0:2]
+baseDir = "/home/utsumi/mnt/wellshare/HAPPI/anlWS"
 figDir  = baseDir + "/fig"
 
 
+
+#**********************************
+# Ptot, Freq, Pint for Total precipitation
+#----------------------------------
+
 thpr = 0
-lvartype   = ["Ptot","Freq","Pint"]
 lkey  = [[scen,tag] for scen in lscen for tag in ltag]
 
 Prcp = {}
 Freq = {}
 Pint = {}
+PrcpTot={}
 for [scen,tag] in lkey:
     da1prcp, da1freq, da1pint = ret_PN.main( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
     #print scen,tag,da1prcp
@@ -66,11 +74,12 @@ for [scen,tag] in lkey:
         Pint[region,tag,scen] = da1pint[region]
 
 
-#**********************************
-# Ptot, Freq, Pint for Total precipitation
-#----------------------------------
-#"""
+        PrcpTot[region,tag,scen] = da1prcp[region]
+
+
+"""
 lvartype   = ["Ptot","Freq","Pint"]
+#lvartype   = ["Ptot"]
 for vartype in lvartype:
     if   vartype == "Ptot":
         Var = Prcp
@@ -80,90 +89,104 @@ for vartype in lvartype:
         Var = Pint
         
     for region in lregion:
+        dldat = {}
         for tag in ltag:
-
-            #--- title ----------
-            stitle1 = "%s (%s thres=%s)"%(region, vartype, thpr)
-            stitle2 = "%s"%(dTagName[tag])
-
-            # Path
-            figPath = figDir  + "/hist.%s.th.%s.%s.%s.png"%(vartype, thpr, tag, region)
-
-            # Data
-            ldat = []
+            dldat[tag] = []
             for scen in lscen:
-                ldat.append(Var[region,tag,scen])
+                dldat[tag].append(Var[region,tag,scen])
 
-            # xmin
+        #--- ylim -----------
+        dylim = {}
+        for tag in ltag:
+            ldat = array([Prcp[region,tag,scen] for scen in lscen])
+            ymin,ymax = [None,None]
             if vartype =="Ptot":
-                if max(ldat) <10:
-                    xmin=10
-                    xmax=100
+                if ldat.min() < 10:
+                    ymin = 11
+                    ymax = 100
+            if vartype =="Pint":
+                if ldat.min() < 10:
+                    ymin = 2
+                    ymax = 10
+            if vartype =="Freq":
+                if ldat.min() < 10:
+                    ymin = 2
+                    ymax = 10
+            dylim[tag] = [ymin,ymax]
 
-                else:
-                    xmin=None
-                    xmax=None
 
-            elif vartype=="Freq":
-                if max(ldat) <1:
-                    xmin=1
-                    xmax=10
-                else:
-                    xmin=None
-                    xmax=None
+        #--- title ----------
+        regNum  = dregInfo[region][1]
+        stitle1 = "%s (%d)"%(region, regNum)
+        stitle2 = "%s (%s thres=%s)"%(region, vartype, thpr)
 
-            elif vartype =="Pint":
-                    
+        # Path
+        figPath = figDir  + "/boxplot.%s.th.%s.%s.png"%(vartype, thpr, region)
 
-            # Draw
-            f_draw_hist.draw_hist(ldat,stitle1,stitle2,figPath)
-#"""
+        f_draw_boxplot.draw_boxplot_multi(dldat,stitle1,figPath, dylim)
+"""
+
 
 #**********************************
-# Freq for Extreme precipitation
+# Freq for extreme precipitation
 #----------------------------------
 """
-lthpr  = ["p99.900","p99.990"]
-vartype="Freq"
+
+lthpr     = ["p99.900","p99.990"]
+vartype   = "Freq"
 for thpr in lthpr:
     lkey  = [[scen,tag] for scen in lscen for tag in ltag]
     
     Freq   = {}
     for [scen,tag] in lkey:
-        da1prcp, da1freq, da1pint = ret_PN.main( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
+        da1freq = ret_PN.load_Freq( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
 
  
+        print "loading",thpr,scen,tag
         for region in lregion:
             Freq[region,tag,scen] = da1freq[region]*4*365
 
-    Var  = Freq
+
+    Var = Freq
     for region in lregion:
+        dldat = {}
         for tag in ltag:
-
-            #--- title ----------
-            stitle1 = "%s (%s thres=%s)"%(region, vartype, thpr)
-            stitle2 = "%s"%(dTagName[tag])
-
-
-            # Path
-            figPath = figDir  + "/hist.%s.th.%s.%s.%s.png"%(vartype, thpr, tag, region)
-
-            # Data
-            ldat = []
+            dldat[tag] = []
             for scen in lscen:
-                ldat.append(Var[region,tag,scen])
-
-            # Draw
-            f_draw_hist.draw_hist(ldat,stitle1,stitle2,figPath)
-
-
+                dldat[tag].append(Var[region,tag,scen])
+    
+        #--- ylim -----------
+        dylim = {}
+        for tag in ltag:
+            ldat = array([PrcpTot[region,tag,scen] for scen in lscen])
+            ymin,ymax = [None,None]
+            if ldat.min() < 10:
+                if   thpr=="p99.900":
+                    ymin = 1
+                    ymax = 1.5
+                elif thpr=="p99.990":
+                    ymin = 0.1
+                    ymax = 0.5
+    
+            dylim[tag] = [ymin,ymax]
+    
+    
+        #--- title ----------
+        regNum  = dregInfo[region][1]
+        stitle1 = "%s (%d)"%(region, regNum)
+    
+        # Path
+        figPath = figDir  + "/boxplot.%s.th.%s.%s.png"%(vartype, thpr, region)
+    
+        f_draw_boxplot.draw_boxplot_multi(dldat,stitle1,figPath, dylim)
 """
 
 
 #**********************************
 # Proportion to all precip
 #----------------------------
-"""
+#"""
+
 lthpr  = ["p99.900","p99.990"]
 vartype="Freq"
 for thpr in lthpr:
@@ -172,9 +195,14 @@ for thpr in lthpr:
     Var  = {}
     Frac = {}
     for [scen,tag] in lkey:
-        da1prcp, da1freq, da1pint = ret_PN.main( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
-        #print scen,tag,da1prcp
- 
+        print "loading",thpr,scen,tag
+        if vartype =="Ptot":
+            da1prcp, da1freq, da1pint = ret_PN.main( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
+
+        elif vartype =="Freq":
+            da1freq = ret_PN.load_Freq( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
+
+         
         for region in lregion:
             if vartype=="Freq":
                 Var[region,tag,scen] = da1freq[region]
@@ -187,29 +215,38 @@ for thpr in lthpr:
             Frac[region,tag,scen] = ma.masked_invalid(Var[region,tag,scen]/Var[region,"plain",scen]).filled(0.0)
 
 
-    Out = Frac
+    Var = Frac
     for region in lregion:
+        dldat = {}
         for tag in ltag:
             if tag == "plain":continue
-            #--- title ----------
-            stitle1 = "%s (Fraction %s thres=%s)"%(region,vartype, thpr)
-            stitle2 = "%s"%(dTagName[tag])
 
-
-
-
-            # Path
-            figPath = figDir  + "/hist.Fraction.%s.th.%s.%s.%s.png"%(vartype, thpr, tag, region)
-
-            # Data
-            ldat = []
+            dldat[tag] = []
             for scen in lscen:
-                ldat.append(Out[region,tag,scen])
+                dldat[tag].append(Var[region,tag,scen])
 
-            # Draw
-            f_draw_hist.draw_hist(ldat,stitle1,stitle2,figPath)
+        #--- title ----------
+        regNum  = dregInfo[region][1]
+        stitle1 = "%s (%d)"%(region, regNum)
 
-"""
+
+        # Path
+        figPath = figDir  + "/boxplot.Fraction.%s.th.%s.%s.png"%(vartype, thpr, region)
+
+        #--- ylim -----------
+        dylim = {}
+        for tag in ltag:
+            ldat = array([PrcpTot[region,tag,scen] for scen in lscen])
+            ymin,ymax = [None,None]
+            if ldat.min() < 10:
+                ymin = 0.1
+                ymax = 0.5
+            dylim[tag] = [ymin,ymax]
+
+
+        # Draw
+        f_draw_boxplot.draw_boxplot_multi(dldat,stitle1,figPath, dylim)
+#"""
 
 
 #**********************************
@@ -243,7 +280,7 @@ for thpr in lthpr:
         stitle2 = "%s"%(thpr)
 
         # Path
-        figPath = figDir  + "/hist.ptile.th.%s.%s.png"%(thpr, region)
+        figPath = figDir  + "/boxplot.ptile.th.%s.%s.png"%(thpr, region)
 
         # Data
         ldat = []
@@ -252,7 +289,7 @@ for thpr in lthpr:
 
 
         # Draw
-        f_draw_hist.draw_hist(ldat,stitle1,stitle2,figPath)
+        f_draw_boxplot.draw_boxplot(ldat,stitle1,stitle2,figPath)
 
 """
    
