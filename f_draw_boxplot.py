@@ -4,27 +4,36 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
 
-
 #************************************
-def draw_boxplot_multi(dldat, stitle, figPath, dylim=None):
+def draw_boxplot_multi(dldat, dsig, ltag, stitle, figPath, dylim=None):
     #-- Figure --------
-    figplot = plt.figure(figsize=(0.82,2.0))
-    #figplot = plt.figure(figsize=(2.0,0.8))
-    ltag   = ["tc","cf","ms","ot"]
-    #lcolor = ["g","blue","orangered"]
+    if len(ltag)==4:
+        figplot = plt.figure(figsize=(0.8,2.1))
+    elif len(ltag)==5:
+        figplot = plt.figure(figsize=(0.8,2.6))
 
     for itag,tag in enumerate(ltag[::-1]):
-
-        axplot = figplot.add_axes([0.55,0.05+0.22*itag,0.4,0.18])
+        if len(ltag)==4:
+            axplot = figplot.add_axes([0.6,0.02+0.21*itag,0.35,0.21])
+        elif len(ltag)==5:
+            axplot = figplot.add_axes([0.6,0.02+0.17*itag,0.35,0.17])
 
         ldat   = dldat[tag]
         nscen  = len(ldat)
+
+        medianprops = dict(linestyle='-', linewidth=0, color='blue')
         for iscen, dat in enumerate(ldat):
+            if (dsig[tag] == True)&(iscen==2):
+                meanprops   = dict(linestyle='-', linewidth=2.3, color='red')
+            else:
+                meanprops   = dict(linestyle='-', linewidth=2.3, color='blue')
+
             if np.allclose(dat, np.zeros(len(dat))): continue
-            bp = axplot.boxplot(dat,positions=[iscen], widths=0.8, whis=[5,95], sym="")
+            bp = axplot.boxplot(dat,positions=[iscen], widths=0.8, whis=[5,95], sym="", medianprops=medianprops, showmeans=True, meanline=True, meanprops=meanprops)
     
-            plt.setp(bp['medians'], color='red', linewidth=2)
-    
+            #plt.setp(bp['medians'], color='blue', linewidth=2)
+
+
         # x-axis
         axplot.set_xlim((-0.5,nscen-0.5))
    
@@ -45,31 +54,8 @@ def draw_boxplot_multi(dldat, stitle, figPath, dylim=None):
                axplot.set_ylim((ymin,ymax))
         
     
-        #    color = lcolor[iscen]
-        #    kde   = scipy.stats.gaussian_kde(dat, bw_method="scott")
-        #    N,Bins,Patches = axplot1.hist(dat, bins=n_bins, alpha=0.3, histtype="bar", color=color)
-     
-        #    x     = np.linspace(dat.min(),dat.max(),100)
-        #    axplot2.plot(x, kde(x), color=color)
-     
-        ##--- ylimit -------------------------
-        #axplot1.set_ylim(bottom=0)
-        #axplot2.set_ylim(bottom=0)
-    
-        ##--- xlimit -------------------------
-        #if xmin != None:
-        #    axplot1.set_xlim((xmin,xmax))
-        #    axplot2.set_xlim((xmin,xmax))
-     
-        ##--- bottom line --------------------
-        #plt.axhline(0, color="black")
-     
-        ##--- frame off ------
-        #axplot1.spines["top"].set_visible(False)
-        #axplot2.spines["top"].set_visible(False)
         #--- title ----------
         plt.suptitle(stitle, fontsize=10)
-        #axplot1.text(0.01,0.79, stitle2, fontsize=10, transform=axplot1.transAxes)
     
     plt.savefig(figPath)
     print figPath

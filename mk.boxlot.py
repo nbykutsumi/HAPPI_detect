@@ -18,9 +18,12 @@ res        = "128x256"
 #lregion    = ["GLB","JPN","S.ISLES","KYUSHU","SHIKOKU","CHUGOKU","KINKI","SE.JPN","NW.JPN","NE.JPN","HOKKAIDO"]
 
 regiontype = "IPCC"
-lregion     = ["ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA","MED","NAS","NAU","NEB","NEU","SAF","SAH","SAS","SAU","SSA","SEA","TIB","WAF","WAS","WSA","WNA"]
-#lregion    = ["EAS"]
+lregion     = ["GLB","ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA","MED","NAS","NAU","NEB","NEU","SAF","SAH","SAS","SAU","SSA","SEA","TIB","WAF","WAS","WSA","WNA"]
+#lregion    = ["CNA"]
 
+Total   = False
+ExFreq  = True
+Fraction= False
 
 
 #lregion    = ["HOKKAIDO"]
@@ -57,13 +60,12 @@ figDir  = baseDir + "/fig"
 # Ptot, Freq, Pint for Total precipitation
 #----------------------------------
 
-thpr = 0
+thpr = 1
 lkey  = [[scen,tag] for scen in lscen for tag in ltag]
 
 Prcp = {}
 Freq = {}
 Pint = {}
-PrcpTot={}
 for [scen,tag] in lkey:
     da1prcp, da1freq, da1pint = ret_PN.main( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
     #print scen,tag,da1prcp
@@ -74,13 +76,13 @@ for [scen,tag] in lkey:
         Pint[region,tag,scen] = da1pint[region]
 
 
-        PrcpTot[region,tag,scen] = da1prcp[region]
 
-
-"""
 lvartype   = ["Ptot","Freq","Pint"]
 #lvartype   = ["Ptot"]
 for vartype in lvartype:
+
+    if Total == False: continue
+
     if   vartype == "Ptot":
         Var = Prcp
     elif vartype == "Freq":
@@ -100,41 +102,53 @@ for vartype in lvartype:
         for tag in ltag:
             ldat = array([Prcp[region,tag,scen] for scen in lscen])
             ymin,ymax = [None,None]
-            if vartype =="Ptot":
-                if ldat.min() < 10:
+            if region =="GLB": pass
+            elif vartype =="Ptot":
+                if ldat.max() < 10:
                     ymin = 11
-                    ymax = 100
-            if vartype =="Pint":
-                if ldat.min() < 10:
+                    ymax = 110
+            elif vartype =="Pint":
+                if ldat.max() < 10:
                     ymin = 2
-                    ymax = 10
-            if vartype =="Freq":
-                if ldat.min() < 10:
+                    ymax = 12
+            elif vartype =="Freq":
+                if ldat.max() < 10:
                     ymin = 2
-                    ymax = 10
+                    ymax = 12
             dylim[tag] = [ymin,ymax]
 
 
+        #--- statistical test --
+        dp    = {}
+        dsig  = {}
+        for tag in ltag:
+            dat0  = Var[region,tag,"P15"]
+            dat1  = Var[region,tag,"P20"]
+            t, dp[tag]  = scipy.stats.ttest_ind(dat0,dat1,equal_var=False)
+            if dp[tag]<0.05: dsig[tag]=True
+            else:  dsig[tag] = False
+
         #--- title ----------
-        regNum  = dregInfo[region][1]
+        regNum  = dregInfo[region][0]
         stitle1 = "%s (%d)"%(region, regNum)
         stitle2 = "%s (%s thres=%s)"%(region, vartype, thpr)
+        if dp["plain"] < 0.05: stitle1 = "*" + stitle1
 
         # Path
         figPath = figDir  + "/boxplot.%s.th.%s.%s.png"%(vartype, thpr, region)
 
-        f_draw_boxplot.draw_boxplot_multi(dldat,stitle1,figPath, dylim)
-"""
+        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, dylim)
 
 
 #**********************************
 # Freq for extreme precipitation
 #----------------------------------
-"""
-
 lthpr     = ["p99.900","p99.990"]
 vartype   = "Freq"
 for thpr in lthpr:
+
+    if ExFreq == False: continue
+
     lkey  = [[scen,tag] for scen in lscen for tag in ltag]
     
     Freq   = {}
@@ -158,40 +172,50 @@ for thpr in lthpr:
         #--- ylim -----------
         dylim = {}
         for tag in ltag:
-            ldat = array([PrcpTot[region,tag,scen] for scen in lscen])
+            ldat = array(dldat[tag])
+            if thpr == "p99.900": thres = 0.1
+            if thpr == "p99.990": thres = 0.01
             ymin,ymax = [None,None]
-            if ldat.min() < 10:
-                if   thpr=="p99.900":
-                    ymin = 1
-                    ymax = 1.5
-                elif thpr=="p99.990":
-                    ymin = 0.1
-                    ymax = 0.5
+            if ldat.max() < thres:
+                ymin = thres*2
+                ymax = thres*12
     
             dylim[tag] = [ymin,ymax]
-    
-    
+
+        #--- statistical test --
+        dp    = {}
+        dsig  = {}
+        for tag in ltag:
+            dat0  = Var[region,tag,"P15"]
+            dat1  = Var[region,tag,"P20"]
+            t, dp[tag]  = scipy.stats.ttest_ind(dat0,dat1,equal_var=False)
+            if dp[tag]<0.05: dsig[tag]=True
+            else:  dsig[tag] = False
+
         #--- title ----------
-        regNum  = dregInfo[region][1]
+        regNum  = dregInfo[region][0]
         stitle1 = "%s (%d)"%(region, regNum)
+        if dp["plain"] < 0.05: stitle1 = "*" + stitle1
     
         # Path
         figPath = figDir  + "/boxplot.%s.th.%s.%s.png"%(vartype, thpr, region)
     
-        f_draw_boxplot.draw_boxplot_multi(dldat,stitle1,figPath, dylim)
-"""
+        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, dylim)
 
 
 #**********************************
 # Proportion to all precip
 #----------------------------
-#"""
-
+#lthpr  = ["p99.900","p99.990"]
 lthpr  = ["p99.900","p99.990"]
 vartype="Freq"
+
 for thpr in lthpr:
+
+    if Fraction == False: continue
+
     lkey  = [[scen,tag] for scen in lscen for tag in ltag]
-    
+
     Var  = {}
     Frac = {}
     for [scen,tag] in lkey:
@@ -225,9 +249,25 @@ for thpr in lthpr:
             for scen in lscen:
                 dldat[tag].append(Var[region,tag,scen])
 
+        #--- statistical test --
+        dp    = {}
+        dsig  = {}
+        for tag in ["tc","cf","ms","ot"]:
+            if array(dldat[tag]).max() < 0.05: continue
+
+            dat0  = Var[region,tag,"P15"]
+            dat1  = Var[region,tag,"P20"]
+            t, dp[tag]  = scipy.stats.ttest_ind(dat0,dat1,equal_var=False)
+            if dp[tag]<0.05: dsig[tag]=True
+            else:  dsig[tag] = False
+
+        p = dp.values()
+
+        #print region,tag,"p=",p,"--",p_tc,p_cf,p_ms,p_ot
         #--- title ----------
-        regNum  = dregInfo[region][1]
+        regNum  = dregInfo[region][0]
         stitle1 = "%s (%d)"%(region, regNum)
+        if p < 0.05: stitle1 = "*" + stitle1
 
 
         # Path
@@ -236,17 +276,20 @@ for thpr in lthpr:
         #--- ylim -----------
         dylim = {}
         for tag in ltag:
-            ldat = array([PrcpTot[region,tag,scen] for scen in lscen])
+            if tag=="plain":continue
+
+            ldat = array(dldat[tag])
             ymin,ymax = [None,None]
-            if ldat.min() < 10:
-                ymin = 0.1
-                ymax = 0.5
+            if ldat.max() < 0.05:
+                ymin = 0.06
+                ymax = 0.23
             dylim[tag] = [ymin,ymax]
 
 
         # Draw
-        f_draw_boxplot.draw_boxplot_multi(dldat,stitle1,figPath, dylim)
-#"""
+        ltag_tmp = ["tc","cf","ms","ot"]
+        f_draw_boxplot.draw_boxplot_multi(dldat,ltag_tmp,stitle1,figPath, dylim)
+
 
 
 #**********************************

@@ -18,8 +18,10 @@ prj     = "HAPPI"
 model   = "MIROC5"
 expr    = "C20"
 #lscen   = ["ALL","P15","P20"]
-#lscen   = ["ALL","P15"]
-lscen   = ["P20"]
+lscen   = ["P15","P20"]
+#lscen   = ["P20"]
+#lscen   = ["P15"]
+#lscen   = ["ALL"]
 #lens    = [1,11,21,31,41]
 #lens    = range(2,10+1)+range(12,20+1)+range(22,30+1)+range(32,40+1)+range(42,50+1)
 lens    = range(1,50+1)
@@ -29,10 +31,10 @@ ny, nx  = 128, 256
 
 #lthpr = [0,"p99.900","p99.990"]
 #lthpr = [0,"p99.900"]
-lthpr = ["p99.900","p99.990"]
+#lthpr = ["p99.900","p99.990"]
 #lthpr = ["p99.990"]
 #lthpr = ["p99.900"]
-#lthpr = [0]
+lthpr = [1]
 
 ltag  = ["tc","cf","ms","ot"]
 ltag_ws  = [tag for tag in ltag if tag !="ot"]

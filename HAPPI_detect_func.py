@@ -141,6 +141,7 @@ def ret_a2region_ipcc(region, ny, nx):
   elif region == "WAS": regnum =19  #West Asia
   elif region == "WSA": regnum =9   #West Coast South America
   elif region == "WNA": regnum =3   #West North America
+  elif region == "GLB": pass        #Global
   else:
     print "by", __file__
     print "check!! region=",region
@@ -148,11 +149,14 @@ def ret_a2region_ipcc(region, ny, nx):
 
     sys.exit()
   #---------------
-  sdir  = "/home/utsumi/mnt/wellshare/data/MapMask/IPCC2012/NYxNX"
-  sname = sdir + "/IPCC2012_map.%dx%d"%(ny,nx)
-  a2map = fromfile(sname, float32).reshape(ny,nx)
-  a2map = ma.masked_not_equal(a2map, regnum).filled(0.0)
-  a2map = ma.masked_equal(a2map, regnum).filled(1.0)
+  if region=="GLB":
+    a2map = ones([ny,nx])
+  else:
+    sdir  = "/home/utsumi/mnt/wellshare/data/MapMask/IPCC2012/NYxNX"
+    sname = sdir + "/IPCC2012_map.%dx%d"%(ny,nx)
+    a2map = fromfile(sname, float32).reshape(ny,nx)
+    a2map = ma.masked_not_equal(a2map, regnum).filled(0.0)
+    a2map = ma.masked_equal(a2map, regnum).filled(1.0)
   return a2map
 
 def ret_regionBBox(region):
@@ -228,6 +232,7 @@ def ret_regionBBox(region):
 
 def dict_IPCC_codeKey():
     l=[
+ ['Global [GLB:0]', 'GLB', 'all'],  # Added by Utsumi
  ['Alaska/N.W. Canada [ALA:1]', 'ALA', 'land'],
  ['Amazon [AMZ:7]', 'AMZ', 'land'],
  ['Central America/Mexico [CAM:6]', 'CAM', 'land'],
@@ -272,8 +277,7 @@ def dict_IPCC_codeKey():
             regNum  = int(dat[0].split(":")[1][:-1])
 
         code    = dat[1]
-        d[code] = [longName,regNum]
-        print "code=",code
+        d[code] = [regNum, longName]
 
     return d
 

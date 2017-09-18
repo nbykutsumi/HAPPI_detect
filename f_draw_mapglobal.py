@@ -4,6 +4,7 @@ import matplotlib.pylab as pylab
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 from numpy import *
 from matplotlib.colors import Normalize
 from mpl_toolkits.axes_grid1 import AxesGrid
@@ -209,9 +210,7 @@ cbarPath = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/dif.tagpr.2106-2115.ALL/MIROC
 
 shapePath= '/home/utsumi/mnt/wellshare/data/MapMask/IPCC2012_shapefile/referenceRegions.shp'
 
-def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="Spectral", midpoint=None, figPath=None, cbarPath=None, lregion=None):
-
-
+def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, tck=None, cmap="Spectral", figPath=None, cbarPath=None, lregion=None,stitle=None):
 
     # Shift Lon
     a2dat_new   = rotate_a2dat(a2dat)
@@ -227,26 +226,27 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="Spectra
     a2hatch_new = rotate_a2dat(a2hatch)
     
     # Plot
-    if midpoint == None:
-        norm = None
-    else:
-        norm = MidPointNorm(midpoint=midpoint)
+    if bnd != None:
+        norm = colors.BoundaryNorm(boundaries=bnd, ncolors=256)
     
-    fig = plt.figure(figsize=(6,3))
+    fig = plt.figure(figsize=(8,4))
     
     cmap  = plt.cm.RdBu_r
     
-    ax   = fig.add_axes([0.1,0.1,0.85,0.8], axisbg="white")
+    ax   = fig.add_axes([0.1,0.05,0.8,0.8], axisbg="white")
     M    = Basemap( projection="robin", lon_0=0, resolution="l", ax=ax)
     
     X_prj, Y_prj = M(X_new,Y_new)
     
     # Fill colors
-    fill = M.pcolormesh(X_prj,Y_prj,a2dat_new,  cmap=cmap, norm=norm)
+    if bnd != None:
+        fill = M.pcolormesh(X_prj,Y_prj,a2dat_new,  cmap=cmap, norm=norm)
+    else:
+        fill = M.pcolormesh(X_prj,Y_prj,a2dat_new,  cmap=cmap)
 
     # Hatches
     dotsize   = 1
-    dotcolor  = "gray"
+    dotcolor  = "0.2"
     a2dot_new = a2hatch_new
     Xdot_new = ma.masked_where(a2dot_new==miss, X_new)[::dotstep,::dotstep]
     Ydot_new = ma.masked_where(a2dot_new==miss, Y_new)[::dotstep,::dotstep]
@@ -254,7 +254,7 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="Spectra
     M.plot(Xdot_prj, Ydot_prj, "o", markersize=dotsize, color=dotcolor)
     
     # Coastline
-    M.drawcoastlines()
+    M.drawcoastlines(linewidth=0.3, color="k")
     
     
     # Shapefile
@@ -297,16 +297,45 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="Spectra
             # properly for zonal line on robinson projection
             #-----------------
             if y0 != y1:
-                M.drawgreatcircle(x0,y0,x1,y1,linewidth=1,color="0.2",alpha=0.8) 
+                M.drawgreatcircle(x0,y0,x1,y1,linewidth=1.3,color="0.2",alpha=0.8) 
             else:
                 x_prj0, y_prj0 = M(x0,y0)
                 x_prj1, y_prj1 = M(x1,y1)
-                M.plot((x_prj0,x_prj1),(y_prj0,y_prj1),linewidth=1,color="0.2",alpha=0.8) 
+                M.plot((x_prj0,x_prj1),(y_prj0,y_prj1),linewidth=1.3,color="0.2",alpha=0.8) 
 
         # plot region code
-        x_txt, y_txt = M(x0-15,y0)
-        plt.text(x_txt, y_txt, "%s"%(regionnum), color="k")
+        x_txt, y_txt = max(xx)-15,  min(yy)+2
+
+        if regionnum==1:
+            x_txt = x_txt - 10
+        elif regionnum==3:
+            x_txt = x_txt - 5
+        elif regionnum==6:
+            x_txt = x_txt - 10
+        elif regionnum==9:
+            x_txt = x_txt - 15
+        elif regionnum==12:
+            x_txt, y_txt = min(xx)+3,  max(yy)-1
+        elif regionnum==18:
+            x_txt, y_txt = min(xx)+9,  y_txt
+        elif regionnum==23:
+            x_txt, y_txt = min(xx)+3,  min(yy)+2
+        elif regionnum==24:
+            x_txt, y_txt = max(xx)-13,  max(yy)-8
+        elif regionnum==26:
+            x_txt, y_txt = min(xx)+3,  min(yy)+2
+
+
+
+
+
+
+        x_txt, y_txt = M(x_txt,y_txt)
+        plt.text(x_txt, y_txt, "%s"%(regionnum), color="r", fontsize=10)
  
+    # Title
+    if stitle !=None:
+        plt.title(stitle)
     
     # Save
     plt.savefig(figPath)
@@ -316,7 +345,13 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="Spectra
     if type(cbarPath) != bool:
         figcbar  = plt.figure(figsize=(5,0.6))
         axcbar   = figcbar.add_axes([0.1,0.4,0.8,0.58])
-        cb = plt.colorbar(fill, boundaries = bnd,orientation='horizontal', cax=axcbar)
+
+        if type(tck) != bool:
+            cb = plt.colorbar(fill, boundaries = bnd, ticks=tck, orientation='horizontal', cax=axcbar)
+        else:
+            cb = plt.colorbar(fill, boundaries = bnd,orientation='horizontal', cax=axcbar)
+
         figcbar.savefig(cbarPath) 
         print cbarPath
-        
+
+

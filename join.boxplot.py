@@ -71,7 +71,7 @@ def add_title(oimg, stitle):
 #**********************
 # Ptot, Freq, Pint for Total precipitation
 #----------------------
-"""
+#"""
 thpr = 0
 lvartype = ["Ptot","Freq","Pint"]
 for vartype in lvartype:
@@ -93,7 +93,7 @@ for vartype in lvartype:
     oimg.save(oPath)
     print oPath
 
-"""
+#"""
 
 #**********************
 # Freq for Extreme precipitation

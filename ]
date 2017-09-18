@@ -106,81 +106,63 @@ def ret_sthpr(thpr):
       return sthpr
 
 
-def load_var_single(scen, ens, var, thpr):
+def load_var_single(scen, ens, var):
     dattype = {"sum":float32, "num":int32, "ptot":float32}
     run = "%s-%s-%03d"%(expr, scen, ens)
     iYear, eYear = dieYear[scen]
     nYear = eYear - iYear +1
 
-    sthpr = ret_sthpr(thpr)
     if var in ["sum","num"]:
         baseDir, sDir, sPath = hd_func.path_sumnum_clim(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear, eYear=eYear, season=season, sumnum=var)
-        return fromfile(sPath, dattype[var]).reshape(ny,nx)
+        return fromfile(sPath, dattype[var]).reshape(ny,nx) /nYear
 
     elif var == "ptot":
-        a2sum = load_var_single(scen, ens, "sum", thpr)
+        a2sum = load_var_single(scen, ens, "sum")
         a2out = a2sum *60*60*6 / nYear  # mm/season
         return a2out
 
 
     elif var == "freq":
         totalnum = calc_totaltimes(iYear,eYear,season)
-        a2num = load_var_single(scen,ens,"num", thpr)
-        print scen,ens,a2num.max()
-        a2out = a2num / float(nYear)   # times per season
+        a2num = load_var_single(scen,ens,"num")
+        a2out = a2num / (eYear-iYear+1)   # times per season
         return a2out
 
-    elif var == "pint":
-        totalnum = calc_totaltimes(iYear,eYear,season)
-        a2sum = load_var_single(scen,ens,"sum", thpr)
-        a2num = load_var_single(scen,ens,"num", thpr)
-        a2out = a2sum / a2num * 60*60*24.  #[mm/day]
-        return a2out
-
-
-
-def load_var_3D(scen, lens, var, thpr):
+def load_var_3D(scen, lens, var):
     nens  = len(lens)
     a3var = empty([nens, ny, nx])
     for iens, ens in enumerate(lens):
-        a3var[iens] = load_var_single(scen, ens, var, thpr)
+        a3var[iens] = load_var_single(scen, ens, var)
     return a3var
 
 
 
 #--------------------------------------
 
-#lkey   = [[1,"plain","ptot"]]
-lkey   = [[1,"ms","ptot"]]
-#lkey   = [[1,tag,"ptot"] for tag in ["tc","cf","ms","ot"]]
-#lkey   = [[1,"plain","ptot"],[1,"plain","freq"],[1,"plain","pint"]]
-#lkey   = [[1,"plain","freq"],[1,"plain","pint"]]
-#lkey   = [[1,"plain","freq"],[1,"plain","pint"]]
-#lkey   = [["p99.900","plain","freq"],["p99.990","plain","freq"]]
+#lkey   = [[1,"ptot"],["p99.900","freq"],["p99.990","freq"]]
+lkey   = [["p99.900","freq"],["p99.990","freq"]]
+sthpr  = ret_sthpr(thpr)
 
-for [thpr, tag, var] in lkey:
-    #llscen = [["ALL","P15"],["ALL","P20"],["P15","P20"]]
-    llscen = [["ALL","P20"]]
+for [thpr, var] in lkey:
+    llscen = [["ALL","P15"],["ALL","P20"],["P15","P20"]]
     for lscen in llscen:
+        tag    = "plain"
         season = "ALL"
         scen0  = lscen[0]
         scen1  = lscen[1]
         # Check statistical Difference (Welch's t-test)
-        a3var0 = load_var_3D(scen0,lens, var, thpr)
-        a3var1 = load_var_3D(scen1,lens, var, thpr)
+        a3var0 = load_var_3D(scen0,lens, var)
+        a3var1 = load_var_3D(scen1,lens, var)
         
         a2t, a2p = scipy.stats.ttest_ind(a3var1, a3var0, axis=0, equal_var= False)
         
         a2hatch  = ma.masked_greater(a2p,0.05).filled(miss)
-
-        a2hatch  = ma.masked_invalid(a2hatch).filled(miss)
         a2dif    = a3var1.mean(axis=0) - a3var0.mean(axis=0)
         
-        #sys.exit()    
         # Figure ********************
         figDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/fig"
-        figPath = os.path.join(figDir,"map.dif.%s.%s.%s-%s.th.%s.%s.png"%(tag,var,scen1,scen0,thpr,season))
-        cbarPath= os.path.join(figDir,"cbar.map.dif.%s.%s.th.%s.png"%(tag,var,thpr))
+        figPath = os.path.join(figDir,"map.dif.%s.%s.%s-%s.%s.png"%(tag,var,scen1,scen0,season))
+        cbarPath= os.path.join(figDir,"cbar.map.dif.%s.%s.png"%(tag,var))
         
         util.mk_dir(figDir)
         # title
@@ -191,27 +173,11 @@ for [thpr, tag, var] in lkey:
         #     ,"ot":"others"
         #     }
     
-        stitle  = "diff %s %s %s-%s th=%s"%(tag,var,scen1,scen0,thpr)
+        stitle  = "diff %s %s %s-%s"%(tag,var,scen1,scen0)
         
-        #bnd    = arange(-30,30+1,1)
-
-        if   (thpr==1)&(var=="ptot"):
-            #bnd = arange(-120,120+0.001,10)
-            bnd = concatenate([arange(-130,-10+0.01,20), arange(10,130+0.01,20)])
-            tck = concatenate([arange(-100,-10+0.01,30), arange(10,120+0.01,30)])
-            tck = None
-
-        elif (thpr==1)&(var=="freq"):
-            bnd = arange(-30,30+0.01, 2)
-        elif (thpr==1)&(var=="pint"):
-            bnd = arange(-0.7,0.7+0.001, 0.05)
-
-        elif (thpr=="p99.900")&(var=="freq"):
-            bnd = arange(-1.0,1.0+0.001,0.01)
-        elif (thpr=="p99.990")&(var=="freq"):
-            bnd = arange(-0.2,0.2+0.001,0.01)
-
-
+        #bnd   = arange(-30,30+1, 5)
+        bnd    = arange(-30,30+1,1)
+        midpoint= 0
         cmap   = "RdBu_r"
         #hd_fig.DrawMap_dotshade(a2dif, a2dot, Lat, Lon, bnd=bnd, figname=figPath, cbarname=cbarPath, dotstep=2, markersize=0.2, stitle=stitle) 
-        f_draw_mapglobal.draw_map_robin(a2dat=a2dif, a2hatch=a2hatch, Lat=Lat, Lon=Lon, miss=-9999, bnd=bnd, tck=tck, cmap=cmap, figPath=figPath, cbarPath=cbarPath, lregion=lregion,stitle=stitle) 
+        f_draw_mapglobal.draw_map_robin(a2dat=a2dif, a2hatch=a2hatch, Lat=Lat, Lon=Lon, miss=-9999, bnd=bnd, cmap=cmap, midpoint=midpoint, figPath=figPath, cbarPath=cbarPath, lregion=lregion,stitle=stitle) 
