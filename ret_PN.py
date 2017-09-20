@@ -97,10 +97,11 @@ def ret_regionmask(regiontype, region, lndsea=None):
         pass
     elif lndsea == "lnd":
         a2lndfrc = hp.load_const("lndfrc") 
-        a2region = ma.masked_where(a2lndfrc ==0.0, a2region).filled(0.)
+        #a2region = ma.masked_where(a2lndfrc ==0.0, a2region).filled(0.)
+        a2region = ma.masked_where(a2lndfrc <0.1, a2region).filled(0.)
     elif lndsea == "sea":
         a2lndfrc = hp.load_const("lndfrc") 
-        a2region = ma.masked_where(a2lndfrc >0.0, a2region).filled(0.)
+        a2region = ma.masked_where(a2lndfrc >=0.1, a2region).filled(0.)
     else:
         print "check lndsea",lndsea
         print "must be None / lnd / sea"

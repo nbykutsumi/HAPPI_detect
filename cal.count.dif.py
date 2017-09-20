@@ -30,17 +30,23 @@ lens    = range(1,50)
 res     = "128x256"
 ny, nx  = 128, 256
 miss    = -9999.
+vmin    = 100  # mm/year
 
-
-lkey   = [[1,"plain","ptot"]]
+#lkey   = [[1,"plain","ptot"]]
 #lkey   = [[1,"tc","ptot"]]
 #lkey   = [[1,tag,"ptot"] for tag in ["tc","cf","ms","ot"]]
 #lkey   = [[1,"plain","ptot"],[1,"plain","freq"],[1,"plain","pint"]]
 #lkey   = [[1,"plain","freq"],[1,"plain","pint"]]
 #lkey   = [[1,"plain","freq"],[1,"plain","pint"]]
 #lkey   = [["p99.900","plain","freq"],["p99.990","plain","freq"]]
+#lkey   = [[1,"plain","ptot"],["p99.900","plain","freq"],["p99.990","plain","freq"]]
+#lkey   = [["p99.900","plain","freq"]]
 
 
+ltag   = ["tc","cf","ms","ot"]
+lkey1  = [[1,tag,"ptot"] for tag in ltag]
+lkey2  = [["p99.900",tag,"ptot"] for tag in ltag]
+lkey   = lkey1 + lkey2
 
 lregion     = ["ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA","MED","NAS","NAU","NEB","NEU","SAF","SAH","SAS","SAU","SSA","SEA","TIB","WAF","WAS","WSA","WNA"]
 #lregion     = ["SAU"]
@@ -135,8 +141,7 @@ def load_var_single(scen, ens, tag, var, thpr):
 
     elif var == "freq":
         totalnum = calc_totaltimes(iYear,eYear,season)
-        a2num = load_var_single(scen,ens,tag, "num", thpr)
-        print scen,ens,a2num.max()
+        a2num = load_var_single(scen,ens, tag, "num", thpr)
         a2out = a2num / float(nYear)   # times per season
         return a2out
 
@@ -156,14 +161,63 @@ def load_var_3D(scen, lens, tag, var, thpr):
         a3var[iens] = load_var_single(scen, ens, tag, var, thpr)
     return a3var
 
+def ret_regionmask(regiontype, region, lndsea=None):
+    if regiontype=="IPCC":
+        a2region= hd_func.ret_a2region_ipcc(region, ny, nx)
+    elif regiontype=="JPN":
+        BBox    = hd_func.ret_regionBBox(region)
+        a2region= grids.mk_mask_BBox(Lat, Lon, BBox)
+    else:
+        print "check regiontype",regiontype
+        print "by",__file__
+        print inspect.currentframe().f_code.co_name
+        sys.exit()
+
+    if   lndsea == None:
+        pass
+    elif lndsea == "lnd":
+        a2lndfrc = hp.load_const("lndfrc")
+        a2region = ma.masked_where(a2lndfrc ==0.0, a2region).filled(0.)
+    elif lndsea == "sea":
+        a2lndfrc = hp.load_const("lndfrc")
+        a2region = ma.masked_where(a2lndfrc >0.0, a2region).filled(0.)
+    else:
+        print "check lndsea",lndsea
+        print "must be None / lnd / sea"
+        print "by",__file__
+        print inspect.currentframe().f_code.co_name
+        sys.exit()
+
+    return a2region
 
 
 #--------------------------------------
+
+a2lndfrc   = hp.load_const("lndfrc")
+d2lndsea   = {}
+d2lndsea["lnd"]  = ma.masked_less(a2lndfrc, 0.1).filled(miss)
+d2lndsea["sea"]  = ma.masked_greater_equal(a2lndfrc, 0.1).filled(miss)
+a2one  = ones([ny,nx],int32)
+
+llndsea    = ["lnd","sea"]
+n_all = {}
+n_sig = {}
+r_sig = {}
 for [thpr, tag, var] in lkey:
+    season = "ALL"
     llscen = [["ALL","P15"],["ALL","P20"],["P15","P20"]]
-    #llscen = [["ALL","P20"]]
+
+    # load tag ptot (thpr=1) for maski
+    a2ptot0 = load_var_3D("ALL",lens, tag, "ptot", 1).mean(axis=0)
+    a2ptot1 = load_var_3D("P15",lens, tag, "ptot", 1).mean(axis=0)
+    a2ptot2 = load_var_3D("P20",lens, tag, "ptot", 1).mean(axis=0)
+
+    a2prmask = a2one*miss
+    a2prmask = ma.masked_where(a2ptot0>vmin, a2prmask).filled(1.0)
+    a2prmask = ma.masked_where(a2ptot1>vmin, a2prmask).filled(1.0)
+    a2prmask = ma.masked_where(a2ptot2>vmin, a2prmask).filled(1.0)
+
     for lscen in llscen:
-        season = "ALL"
         scen0  = lscen[0]
         scen1  = lscen[1]
         # Check statistical Difference (Welch's t-test)
@@ -176,47 +230,39 @@ for [thpr, tag, var] in lkey:
 
         a2hatch  = ma.masked_invalid(a2hatch).filled(miss)
         a2dif    = a3var1.mean(axis=0) - a3var0.mean(axis=0)
+
+        # Count
+        a2all    = ma.masked_where(a2prmask==miss, a2one)
+        a2sig    = ma.masked_where(a2hatch ==miss, a2all)
+
+        for lndsea in llndsea:
+            print thpr, tag, var, lscen, lndsea
+            a2all_tmp = ma.masked_where(d2lndsea[lndsea]==miss, a2all)
+            a2sig_tmp = ma.masked_where(d2lndsea[lndsea]==miss, a2sig)
+
+            key = (thpr, tag, var, scen0, scen1, lndsea)
+            n_all[key] = a2all_tmp.sum()
+            n_sig[key] = a2sig_tmp.sum()
+            r_sig[key] = float(n_sig[key]) / float(n_all[key])
+
+            #sys.exit()
         
-        # Figure ********************
-        figDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/fig"
-        figPath = os.path.join(figDir,"map.dif.%s.%s.%s-%s.th.%s.%s.png"%(tag,var,scen1,scen0,thpr,season))
-        cbarPath= os.path.join(figDir,"cbar.map.dif.%s.%s.th.%s.png"%(tag,var,thpr))
-        
-        util.mk_dir(figDir)
-        # title
-        #dtag={ "plain":""
-        #     ,"tc":"tropical cyclones"
-        #     ,"cf":"extratropical cyclones"
-        #     ,"ms":"monsoon"
-        #     ,"ot":"others"
-        #     }
-    
-        stitle  = "diff %s %s %s-%s th=%s"%(tag,var,scen1,scen0,thpr)
-        
-        if   (thpr==1)&(var=="ptot"):
-            #bnd = arange(-120,120+0.001,10)
-            bnd = None
-            vmin, vmax= -120, 120
-
-        elif (thpr==1)&(var=="freq"):
-            #bnd = arange(-30,30+0.01, 2)
-            bnd = None
-            vmin, vmax = -30, 30
-        elif (thpr==1)&(var=="pint"):
-            #bnd = arange(-0.7,0.7+0.001, 0.05)
-            bnd = None
-            vmin, vmax = -0.7, 0.7
-
-        elif (thpr=="p99.900")&(var=="freq"):
-            #bnd = arange(-1.0,1.0+0.001,0.01)
-            bnd = None
-            vmin, vmax = -1.0, 1.0
-        elif (thpr=="p99.990")&(var=="freq"):
-            #bnd = arange(-0.2,0.2+0.001,0.01)
-            bnd = None
-            vmin, vmax = -0.2, 0.2
+# write ********************
+slabel = ",".join(["thpr","tag","var","scen0","scen1","lndsea","N_all","N_sig","R_sig"]) +"\n"
+sout   = slabel
+for [thpr, tag, var] in lkey:
+    for lscen in llscen:
+        scen0  = lscen[0]
+        scen1  = lscen[1]
+        for lndsea in llndsea:
+            key  = (thpr, tag, var, scen0, scen1, lndsea)
+            skey = ",".join(map(str, key))
+            sout = sout + skey + ",%s,%s,%s\n"%(n_all[key],n_sig[key],r_sig[key])
 
 
-        cmap   = "RdBu_r"
-        #hd_fig.DrawMap_dotshade(a2dif, a2dot, Lat, Lon, bnd=bnd, figname=figPath, cbarname=cbarPath, dotstep=2, markersize=0.2, stitle=stitle) 
-        f_draw_mapglobal.draw_map_robin(a2dat=a2dif, a2hatch=a2hatch, Lat=Lat, Lon=Lon, miss=-9999, bnd=bnd, cmap=cmap, vmin=vmin, vmax=vmax, figPath=figPath, cbarPath=cbarPath, lregion=lregion,stitle=stitle) 
+figDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/fig"
+util.mk_dir(figDir)
+csvPath = os.path.join(figDir,"count.sig.csv")
+f = open(csvPath, "w"); f.write(sout); f.close()
+print csvPath
+

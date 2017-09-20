@@ -19,13 +19,15 @@ res        = "128x256"
 
 regiontype = "IPCC"
 lregion     = ["GLB","ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA","MED","NAS","NAU","NEB","NEU","SAF","SAH","SAS","SAU","SSA","SEA","TIB","WAF","WAS","WSA","WNA"]
-#lregion    = ["CNA"]
+#lregion    = ["ALA"]
 
+PtotMin = 10   # mm/year
+#- Switch  ------------
 Total   = False
-ExFreq  = True
+ExFreq  = False
 Fraction= False
-
-
+TotalRat= True
+#----------------------
 #lregion    = ["HOKKAIDO"]
 #lens       = [1,11,21,31,41]
 lens       = range(1,50+1)
@@ -67,6 +69,8 @@ Prcp = {}
 Freq = {}
 Pint = {}
 for [scen,tag] in lkey:
+    #if Total == False: continue
+
     da1prcp, da1freq, da1pint = ret_PN.main( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
     #print scen,tag,da1prcp
 
@@ -97,26 +101,20 @@ for vartype in lvartype:
             for scen in lscen:
                 dldat[tag].append(Var[region,tag,scen])
 
-        #--- ylim -----------
-        dylim = {}
+        #--- ddraw -----------
+        ddraw = {}
         for tag in ltag:
-            ldat = array([Prcp[region,tag,scen] for scen in lscen])
-            ymin,ymax = [None,None]
-            if region =="GLB": pass
-            elif vartype =="Ptot":
-                if ldat.max() < 10:
-                    ymin = 11
-                    ymax = 110
-            elif vartype =="Pint":
-                if ldat.max() < 10:
-                    ymin = 2
-                    ymax = 12
-            elif vartype =="Freq":
-                if ldat.max() < 10:
-                    ymin = 2
-                    ymax = 12
-            dylim[tag] = [ymin,ymax]
+            lmeanPrcp = [mean(Prcp[region,tag,scen]) for scen in lscen]
+            if region=="GLB":
+                ddraw[tag] = True
+            elif max(lmeanPrcp) < PtotMin:
+                ddraw[tag] = False
+            else:
+                ddraw[tag] = True
 
+        #--- ylim -----------
+        #dylim = None
+        #dytick= {tag:None for tag in ltag}
 
         #--- statistical test --
         dp    = {}
@@ -137,7 +135,8 @@ for vartype in lvartype:
         # Path
         figPath = figDir  + "/boxplot.%s.th.%s.%s.png"%(vartype, thpr, region)
 
-        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, dylim)
+        #f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, dylim)
+        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, ddraw)
 
 
 #**********************************
@@ -168,19 +167,21 @@ for thpr in lthpr:
             dldat[tag] = []
             for scen in lscen:
                 dldat[tag].append(Var[region,tag,scen])
+
+        #--- ddraw -----------
+        ddraw = {}
+        for tag in ltag:
+            lmeanPrcp = [mean(Prcp[region,tag,scen]) for scen in lscen]
+            if region=="GLB":
+                ddraw[tag] = True
+            elif max(lmeanPrcp) < PtotMin:
+                ddraw[tag] = False
+            else:
+                ddraw[tag] = True
+
     
         #--- ylim -----------
-        dylim = {}
-        for tag in ltag:
-            ldat = array(dldat[tag])
-            if thpr == "p99.900": thres = 0.1
-            if thpr == "p99.990": thres = 0.01
-            ymin,ymax = [None,None]
-            if ldat.max() < thres:
-                ymin = thres*2
-                ymax = thres*12
-    
-            dylim[tag] = [ymin,ymax]
+        #dylim = None
 
         #--- statistical test --
         dp    = {}
@@ -200,15 +201,17 @@ for thpr in lthpr:
         # Path
         figPath = figDir  + "/boxplot.%s.th.%s.%s.png"%(vartype, thpr, region)
     
-        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, dylim)
+        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, ddraw)
 
 
 #**********************************
 # Proportion to all precip
 #----------------------------
 #lthpr  = ["p99.900","p99.990"]
-lthpr  = ["p99.900","p99.990"]
-vartype="Freq"
+#vartype="Freq"
+
+lthpr  = [1,"p99.900","p99.990"]
+vartype="Ptot"
 
 for thpr in lthpr:
 
@@ -249,9 +252,20 @@ for thpr in lthpr:
             for scen in lscen:
                 dldat[tag].append(Var[region,tag,scen])
 
+        #--- ddraw -----------
+        ddraw = {}
+        for tag in ltag:
+            lmeanPrcp = [mean(Prcp[region,tag,scen]) for scen in lscen]
+            if region=="GLB":
+                ddraw[tag] = True
+            elif max(lmeanPrcp) < PtotMin:
+                ddraw[tag] = False
+            else:
+                ddraw[tag] = True
+
         #--- statistical test --
         dp    = {}
-        dsig  = {}
+        dsig  = {"tc":False, "cf":False, "ms":False,"ot":False}
         for tag in ["tc","cf","ms","ot"]:
             if array(dldat[tag]).max() < 0.05: continue
 
@@ -274,22 +288,208 @@ for thpr in lthpr:
         figPath = figDir  + "/boxplot.Fraction.%s.th.%s.%s.png"%(vartype, thpr, region)
 
         #--- ylim -----------
-        dylim = {}
-        for tag in ltag:
-            if tag=="plain":continue
-
-            ldat = array(dldat[tag])
-            ymin,ymax = [None,None]
-            if ldat.max() < 0.05:
-                ymin = 0.06
-                ymax = 0.23
-            dylim[tag] = [ymin,ymax]
+        #dylim = None
 
 
         # Draw
         ltag_tmp = ["tc","cf","ms","ot"]
-        f_draw_boxplot.draw_boxplot_multi(dldat,ltag_tmp,stitle1,figPath, dylim)
 
+        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag_tmp,stitle1,figPath, ddraw=ddraw)
+
+
+#**********************************
+# fractional change Ptot, Freq, Pint for Total precipitation
+#----------------------------------
+#lkey1      = [[1,"Ptot"],[1,"Freq"],[1,"Pint"],["99.900","Freq"],["p99.990","Freq"]]
+lkey1      = [["p99.900","Freq"],["p99.990","Freq"]]
+#lkey1      = [[1,"Ptot"]]
+for thpr, vartype in lkey1:
+
+    if TotalRat == False: continue
+
+    Var = {}
+    Rat = {}
+    lkey2 = [[scen,tag] for scen in ["ALL","P15","P20"] for tag in ltag]
+    for [scen,tag] in lkey2:
+        print "loading",thpr,scen,tag
+        if vartype in ["Ptot","Pint"]:
+            da1prcp, da1freq, da1pint = ret_PN.main( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
+
+        elif vartype =="Freq":
+            da1freq = ret_PN.load_Freq( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
+
+
+        for region in lregion:
+            if vartype=="Ptot":
+                Var[region,tag,scen] = da1prcp[region]
+            elif vartype=="Freq":
+                Var[region,tag,scen] = da1freq[region]
+            elif vartype=="Pint":
+                Var[region,tag,scen] = da1pint[region]
+
+
+
+    for region in lregion:
+        dldat = {}
+        for tag in ltag:
+            dldat[tag] = []
+            for scen in ["P15","P20"]:
+                lvfut  = Var[region,tag,scen]
+                vpre   = Var[region,tag,"ALL"].mean()
+                lvout  = lvfut/vpre
+                dldat[tag].append(lvout)
+
+        #--- ddraw -----------
+        ddraw = {}
+        for tag in ltag:
+            lmeanPrcp = [mean(Prcp[region,tag,scen]) for scen in lscen]
+            if region=="GLB":
+                ddraw[tag] = True
+            elif max(lmeanPrcp) < PtotMin:
+                ddraw[tag] = False
+            else:
+                ddraw[tag] = True
+
+        #--- ylim -----------
+        dylim = {}
+        dytick= {}
+        lmean = []
+        for tag in ltag:
+            for dat in dldat[tag]:
+                if ddraw[tag] ==True:
+                    lmean.append(abs(dat.mean()-1.0))
+                else:
+                    lmean.append(nan)
+
+        if thpr == 1:
+            difMax = 0.1
+            lytick = [0.95, 1.0, 1.05]
+        elif thpr in ["p99.900","p99.990"]:
+            difMax = 1.0
+            lytick = [0.5, 1.0, 1.5]
+
+        if max(lmean) > difMax:
+            ymin =1.0 - max(lmean)*1.3
+            ymax =1.0 + max(lmean)*1.3
+            for tag in ltag: dytick[tag] = None
+        else:
+            ymin = 1.0-difMax
+            ymax = 1.0+difMax
+            for tag in ltag: dytick[tag]= lytick
+
+        for tag in ltag: dylim[tag] = [ymin,ymax]
+
+
+        #--- statistical test --
+        dp    = {}
+        dsig  = {}
+        for tag in ltag:
+            #dat0  = Var[region,tag,"P15"]
+            #dat1  = Var[region,tag,"P20"]
+            #t, dp[tag]  = scipy.stats.ttest_ind(dat0,dat1,equal_var=False)
+            #if dp[tag]<0.05: dsig[tag]=True
+            #else:  dsig[tag] = False
+            dsig[tag] = False
+
+        #--- title ----------
+        regNum  = dregInfo[region][0]
+        stitle1 = "%s (%d)"%(region, regNum)
+        stitle2 = "%s (%s thres=%s)"%(region, vartype, thpr)
+        #if dp["plain"] < 0.05: stitle1 = "*" + stitle1
+
+        # Path
+        figPath = figDir  + "/boxplot.rat.%s.th.%s.%s.png"%(vartype, thpr, region)
+
+        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, ddraw, dylim, dytick=dytick, hline=1)
+
+
+
+
+
+"""
+#**********************************
+# fractional change Ptot, Freq, Pint for Total precipitation
+#----------------------------------
+lvartype   = ["Ptot","Freq","Pint"]
+#lvartype   = ["Ptot"]
+for vartype in lvartype:
+
+    if TotalRat == False: continue
+
+    if   vartype == "Ptot":
+        Var = Prcp
+    elif vartype == "Freq":
+        Var = Freq
+    elif vartype == "Pint":
+        Var = Pint
+        
+    for region in lregion:
+        dldat = {}
+        for tag in ltag:
+            dldat[tag] = []
+            for scen in ["P15","P20"]:
+                lvfut  = Var[region,tag,scen]
+                vpre   = Var[region,tag,"ALL"].mean()
+                lvout  = lvfut/vpre
+                dldat[tag].append(lvout)
+
+        #--- ddraw -----------
+        ddraw = {}
+        for tag in ltag:
+            lmeanPrcp = [mean(Prcp[region,tag,scen]) for scen in lscen]
+            if region=="GLB":
+                ddraw[tag] = True
+            elif max(lmeanPrcp) < PtotMin:
+                ddraw[tag] = False
+            else:
+                ddraw[tag] = True
+
+        #--- ylim -----------
+        dylim = {}
+        dytick= {}
+        lmean = []
+        for tag in ltag:
+            for dat in dldat[tag]:
+                if ddraw[tag] ==True:
+                    lmean.append(abs(dat.mean()-1.0))
+                else:
+                    lmean.append(nan)
+
+        if max(lmean) > 0.1:
+            ymin =1.0 - max(lmean)*1.3
+            ymax =1.0 + max(lmean)*1.3
+            for tag in ltag: dytick[tag] = None
+        else:
+            ymin = 0.9
+            ymax = 1.1
+            for tag in ltag: dytick[tag]= [0.95,1.0,1.05]
+
+        for tag in ltag: dylim[tag] = [ymin,ymax]
+
+
+        #--- statistical test --
+        dp    = {}
+        dsig  = {}
+        for tag in ltag:
+            #dat0  = Var[region,tag,"P15"]
+            #dat1  = Var[region,tag,"P20"]
+            #t, dp[tag]  = scipy.stats.ttest_ind(dat0,dat1,equal_var=False)
+            #if dp[tag]<0.05: dsig[tag]=True
+            #else:  dsig[tag] = False
+            dsig[tag] = False
+
+        #--- title ----------
+        regNum  = dregInfo[region][0]
+        stitle1 = "%s (%d)"%(region, regNum)
+        stitle2 = "%s (%s thres=%s)"%(region, vartype, thpr)
+        #if dp["plain"] < 0.05: stitle1 = "*" + stitle1
+
+        # Path
+        figPath = figDir  + "/boxplot.rat.%s.th.%s.%s.png"%(vartype, thpr, region)
+
+        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, ddraw, dylim, dytick=dytick, hline=1)
+
+"""
 
 
 #**********************************

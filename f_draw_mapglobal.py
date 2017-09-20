@@ -210,7 +210,7 @@ cbarPath = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/dif.tagpr.2106-2115.ALL/MIROC
 
 shapePath= '/home/utsumi/mnt/wellshare/data/MapMask/IPCC2012_shapefile/referenceRegions.shp'
 
-def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, tck=None, cmap="Spectral", figPath=None, cbarPath=None, lregion=None,stitle=None):
+def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="RdBu_r", vmin=None, vmax=None, figPath=None, cbarPath=None, cbarOrientation="horizontal",lregion=None,stitle=None):
 
     # Shift Lon
     a2dat_new   = rotate_a2dat(a2dat)
@@ -231,8 +231,6 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, tck=None, cma
     
     fig = plt.figure(figsize=(8,4))
     
-    cmap  = plt.cm.RdBu_r
-    
     ax   = fig.add_axes([0.1,0.05,0.8,0.8], axisbg="white")
     M    = Basemap( projection="robin", lon_0=0, resolution="l", ax=ax)
     
@@ -242,7 +240,7 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, tck=None, cma
     if bnd != None:
         fill = M.pcolormesh(X_prj,Y_prj,a2dat_new,  cmap=cmap, norm=norm)
     else:
-        fill = M.pcolormesh(X_prj,Y_prj,a2dat_new,  cmap=cmap)
+        fill = M.pcolormesh(X_prj,Y_prj,a2dat_new,  cmap=cmap, vmin=vmin, vmax=vmax)
 
     # Hatches
     dotsize   = 1
@@ -258,6 +256,8 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, tck=None, cma
     
     
     # Shapefile
+    if type(lregion) != bool: lregion=[]
+
     sf    = shapefile.Reader(shapePath)
     shapes = sf.shapes()
     records= sf.records()
@@ -343,13 +343,17 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, tck=None, cma
     
     # Colorbar
     if type(cbarPath) != bool:
-        figcbar  = plt.figure(figsize=(5,0.6))
-        axcbar   = figcbar.add_axes([0.1,0.4,0.8,0.58])
+        if cbarOrientation=="horizontal":
+            figcbar  = plt.figure(figsize=(5,0.6))
+            axcbar   = figcbar.add_axes([0.1,0.4,0.8,0.58])
+        elif cbarOrientation=="vertical":
 
-        if type(tck) != bool:
-            cb = plt.colorbar(fill, boundaries = bnd, ticks=tck, orientation='horizontal', cax=axcbar)
-        else:
-            cb = plt.colorbar(fill, boundaries = bnd,orientation='horizontal', cax=axcbar)
+            figcbar  = plt.figure(figsize=(0.8,1.6))
+            axcbar   = figcbar.add_axes([0.01,0.05,0.25,0.9])
+
+ 
+
+        cb = plt.colorbar(fill, boundaries = bnd,orientation=cbarOrientation, cax=axcbar)
 
         figcbar.savefig(cbarPath) 
         print cbarPath

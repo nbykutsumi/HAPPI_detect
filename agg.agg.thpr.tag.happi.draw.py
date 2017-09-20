@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use("Agg")
 from numpy import *
 from datetime import datetime, timedelta
 from ConfigParser   import SafeConfigParser
@@ -10,6 +12,7 @@ import myfunc.IO.HAPPI as HAPPI
 import HAPPI_detect_func as hd_func
 import HAPPI_detect_fig  as hd_fig
 import scipy.stats
+import f_draw_mapglobal
 # Config --------------------------------------------
 cfg         = SafeConfigParser(os.environ)
 cfg.read("/".join(__file__.split("/")[:-1]) + "/config")
@@ -18,12 +21,12 @@ detectName  = cfg.get("Defaults","detectName")
 config_func = import_module("%s.config_func"%(detectName))
 Tag         = import_module("%s.Tag"%(detectName))
 #----------------------------------------------------
-#lvartype = ["Ptot","Num"]
-lvartype = ["Num"]
-#lthpr = [0.5]
+lvartype = ["Ptot"]
+#lvartype = ["Num"]
+lthpr = [1]
 #lthpr = [0.0]
 #lthpr = ["p99.990"]
-lthpr = ["p99.900","p99.990"]
+#lthpr = ["p99.900","p99.990"]
 
 
 prj     = "HAPPI"
@@ -31,9 +34,9 @@ model   = "MIROC5"
 expr    = "C20"
 #lscen   = ["ALL","P15","P20"]
 #lscen   = ["P15","P20"]
-lscen   = ["P20"]
-#lscen   = ["ALL"]
-lens    = [1,11,21,31,41]
+#lscen   = ["P20"]
+lscen   = ["ALL"]
+lens    = range(1,50+1)
 nens    = len(lens)
 res     = "128x256"
 noleap  = True
@@ -42,8 +45,6 @@ ny, nx  = 128, 256
 ltag  = ["tc","cf","ms","ot"]
 #ltag   = []
 ltag_ws  = [tag for tag in ltag if tag !="ot"]
-ltag_2nd = ["ms"]
-
 dieYear = {"ALL": (2006, 2015)
          ,"P15": (2106, 2115)
          ,"P20": (2106, 2115)
@@ -124,15 +125,23 @@ for (scen, thpr, vartype) in lKey:
 
         # Figure
 
-        #bnd  = [100,400,700,1000,1300,1600,1900,2200,2500,2800]
-        bnd = ret_bnd(vartype, thpr)
+        bnd  = [0,100,400,700,1000,1300,1600,1900,2200,2500,2800]
+        #bnd = ret_bnd(vartype, thpr)
+        #bnd  = None
+        #bnd  = range(0,300+1,20)
 
-        #cmap = "Spectral"
         cmap = "jet_r"
-        extend = "both"   # "neither","both","min","max"
+        vmax = None
+        vmin = None
+
+        #cmap = "gnuplot2_r"
+        #vmax = 2800
+        #vmin = 0
+
+        #extend = "both"   # "neither","both","min","max"
         #extend = "neither"   # "neither","both","min","max"
 
-        white_minmax= "min"
+        #white_minmax= "min"
 
         # Title
         stitle = "%s %s %s [%s] %s"%(model,scen,vartype, sunit, tag)
@@ -149,9 +158,12 @@ for (scen, thpr, vartype) in lKey:
 
 
         figname= figDir + "/%s.th.%s.%s.%s.png"%(scen,sthpr,tag,vartype)
-        hd_fig.DrawMap_dotshade(a2in=a2var, a2dot=a2sig, a1lat=Lat, a1lon=Lon, BBox=BBox, bnd=bnd, cmap=cmap, extend=extend, white_minmax=white_minmax, figname=figname, cbarname=cbarname, stitle=stitle, dotstep=5, dotcolor="0.8")
 
-        # Relative change [%]
+        #hd_fig.DrawMap_dotshade(a2in=a2var, a2dot=a2sig, a1lat=Lat, a1lon=Lon, BBox=BBox, bnd=bnd, cmap=cmap, extend=extend, white_minmax=white_minmax, figname=figname, cbarname=cbarname, stitle=stitle, dotstep=5, dotcolor="0.8")
+
+        a2hatch = ones([ny,nx],float32)*miss
+
+        f_draw_mapglobal.draw_map_robin(a2dat=a2var, a2hatch=a2hatch, Lat=Lat, Lon=Lon, miss=-9999, bnd=bnd, cmap=cmap, vmin=vmin, vmax=vmax, figPath=figname, cbarPath=cbarname, stitle=stitle)
 
 
 

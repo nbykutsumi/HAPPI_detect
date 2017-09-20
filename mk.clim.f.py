@@ -13,21 +13,23 @@ detectName  = cfg.get("Defaults","detectName")
 config_func = import_module("%s.config_func"%(detectName))
 Front       = import_module("%s.Front"%(detectName))
 #--------------------------------------------------------
-#prj     = "JRA55"
-#model   = "__"
-#run     = "__"
-#res     = "145x288"
-#noleap   = False
+prj     = "JRA55"
+model   = "__"
+run     = "__"
+lens    = [1]
+res     = "145x288"
+ny,nx   = 145,288
+noleap   = False
 
-prj     = "HAPPI"
-model   = "MIROC5"
-#run     = "C20-ALL-001"
-#run     = "C20-ALL-001-100-070"
-#run     = "C20-ALL-001-070-100"
-#run     = "C20-ALL-001-080-100"
-run     = "C20-ALL-001"
-res     = "128x256"
-noleap  = True
+#prj     = "HAPPI"
+#model   = "MIROC5"
+#expr    = "C20"
+#scen    = "ALL"
+#lens    = range(1,50+1)
+#run     = "C20-ALL-001"  # for config
+#res     = "128x256"
+#ny,nx   = 128, 256
+#noleap  = True
 
 ret_lDTime = {False: util.ret_lDTime
              ,True : util.ret_lDTime_noleap
@@ -39,33 +41,39 @@ F        = Front.Front(cfg_det, miss=0.0)
 
 iYear = 2006
 eYear = 2014
+#eYear = 2006
 lYear = range(iYear,eYear+1)
 lMon  = range(1,12+1)
 #lMon = [1]
 
-for Year in lYear:
-    for Mon in lMon:
-        
-        dDTime = timedelta(hours=6)
-        eDay   = calendar.monthrange(Year,Mon)[1]
-        iDTime = datetime(Year,Mon,1,6)
-        eDTime = datetime(Year,Mon,eDay,18)
-        lDTime = ret_lDTime(iDTime, eDTime, dDTime)
+season = "ALL"
+for ens in lens:
+    if prj == "HAPPI":
+        run = "%s-%s-%03d"%(expr,scen,ens)
 
-        ny     = F.ny
-        nx     = F.nx
-        a2sum  = zeros([ny,nx],float32)        
-        for DTime in lDTime:
-            #print DTime
-            a2f   = F.mk_tfront(DTime)
-            a2sum = a2sum + a2f
+    a2sum  = zeros([ny,nx],int32)
+    ntimes = 0
+    for Year in lYear:
+        for Mon in lMon:
+            print Year, Mon
+            dDTime = timedelta(hours=6)
+            eDay   = calendar.monthrange(Year,Mon)[1]
+            iDTime = datetime(Year,Mon,1,6)
+            eDTime = datetime(Year,Mon,eDay,18)
+            lDTime = ret_lDTime(iDTime, eDTime, dDTime)
+            ntimes = ntimes + len(lDTime) 
+            for DTime in lDTime:
+                a2f   = F.mk_tfront(DTime)
+                a2f   = ma.masked_not_equal(a2f,0.0).filled(1.0).astype(int32)
+                a2sum = a2sum + a2f
 
-        a2freq  = a2sum / len(lDTime)
-        # Save monthly data
-        baseDir = "/home/utsumi/mnt/wellshare/HAPPI/anlWS"
-        oDir    = os.path.join(baseDir, "clim.loc.fbc",prj,model,run)
-        util.mk_dir(oDir)
-        filePath= os.path.join(oDir, "freq.%04d.%02d.%s"%(Year, Mon, res))
-        a2freq.tofile(filePath)
-        print filePath
-
+ 
+    a2freq  = (a2sum / float(ntimes)).astype(float32)
+    # Save monthly data
+    baseDir = "/home/utsumi/mnt/wellshare/HAPPI/anlWS"
+    oDir    = os.path.join(baseDir, "clim.loc.fbc",prj,model,run)
+    util.mk_dir(oDir)
+    filePath= os.path.join(oDir, "freq.%s.%s"%(season, res))
+    a2freq.tofile(filePath)
+    print filePath
+    
