@@ -43,10 +43,14 @@ vmin    = 100  # mm/year
 #lkey   = [["p99.900","plain","freq"]]
 
 
-ltag   = ["tc","cf","ms","ot"]
+ltag   = ["plain","tc","cf","ms","ot"]
 lkey1  = [[1,tag,"ptot"] for tag in ltag]
-lkey2  = [["p99.900",tag,"ptot"] for tag in ltag]
-lkey   = lkey1 + lkey2
+lkey2  = [[1,tag,"pint"] for tag in ltag]
+lkey3  = [[1,tag,"freq"] for tag in ltag]
+lkey4  = [["p99.990",tag,"freq"] for tag in ltag]
+lkey5  = [["p99.990",tag,"ptot"] for tag in ltag]
+#lkey   = lkey1 + lkey2
+lkey   = lkey1 + lkey2 + lkey3 + lkey4 + lkey5
 
 lregion     = ["ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA","MED","NAS","NAU","NEB","NEU","SAF","SAH","SAS","SAU","SSA","SEA","TIB","WAF","WAS","WSA","WNA"]
 #lregion     = ["SAU"]
@@ -201,8 +205,11 @@ a2one  = ones([ny,nx],int32)
 
 llndsea    = ["lnd","sea"]
 n_all = {}
-n_sig = {}
-r_sig = {}
+n_sig_p = {}
+n_sig_n = {}
+r_sig_p= {}    # positive change (increase)
+r_sig_n= {}    # negative change (decrease)
+
 for [thpr, tag, var] in lkey:
     season = "ALL"
     llscen = [["ALL","P15"],["ALL","P20"],["P15","P20"]]
@@ -234,21 +241,30 @@ for [thpr, tag, var] in lkey:
         # Count
         a2all    = ma.masked_where(a2prmask==miss, a2one)
         a2sig    = ma.masked_where(a2hatch ==miss, a2all)
+        a2sig_p  = ma.masked_where(a2dif <0, a2sig)
+        a2sig_n  = ma.masked_where(a2dif >0, a2sig)
 
         for lndsea in llndsea:
             print thpr, tag, var, lscen, lndsea
-            a2all_tmp = ma.masked_where(d2lndsea[lndsea]==miss, a2all)
-            a2sig_tmp = ma.masked_where(d2lndsea[lndsea]==miss, a2sig)
+            a2all_tmp   = ma.masked_where(d2lndsea[lndsea]==miss, a2all)
+            a2sig_p_tmp = ma.masked_where(d2lndsea[lndsea]==miss, a2sig_p)
+            a2sig_n_tmp = ma.masked_where(d2lndsea[lndsea]==miss, a2sig_n)
 
             key = (thpr, tag, var, scen0, scen1, lndsea)
-            n_all[key] = a2all_tmp.sum()
-            n_sig[key] = a2sig_tmp.sum()
-            r_sig[key] = float(n_sig[key]) / float(n_all[key])
+            n_all  [key] = a2all_tmp.sum()
 
-            #sys.exit()
+            n_sig_p[key] = a2sig_p_tmp.sum()
+            r_sig_p[key] = float(n_sig_p[key]) / float(n_all[key])
+
+            n_sig_n[key] = a2sig_n_tmp.sum()
+            r_sig_n[key] = float(n_sig_n[key]) / float(n_all[key])
+
         
 # write ********************
-slabel = ",".join(["thpr","tag","var","scen0","scen1","lndsea","N_all","N_sig","R_sig"]) +"\n"
+dtag   = {"plain":"All","tc":"TC","cf":"ExC","ms":"Mons","ot":"Others"}
+
+slabel = ",".join(["thpr","tag","var","scen0","scen1","lndsea","N_all","N_sig+","N_sig-","R_sig+","R_sig-"]) +"\n"
+#slables = "a"+ "\n"
 sout   = slabel
 for [thpr, tag, var] in lkey:
     for lscen in llscen:
@@ -256,8 +272,8 @@ for [thpr, tag, var] in lkey:
         scen1  = lscen[1]
         for lndsea in llndsea:
             key  = (thpr, tag, var, scen0, scen1, lndsea)
-            skey = ",".join(map(str, key))
-            sout = sout + skey + ",%s,%s,%s\n"%(n_all[key],n_sig[key],r_sig[key])
+            skey  = ",".join(map(str,[thpr, dtag[tag], var, scen0, scen1, lndsea]))
+            sout = sout + skey + ",%s,%s,%s,%s,%s\n"%(n_all[key],n_sig_p[key],n_sig_n[key],r_sig_p[key],r_sig_n[key])
 
 
 figDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/fig"

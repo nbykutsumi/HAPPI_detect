@@ -32,9 +32,13 @@ ny, nx  = 128, 256
 miss    = -9999.
 
 
-lkey   = [[1,"plain","ptot"]]
+#lkey   = [[1,"plain","ptot"]]
 #lkey   = [[1,"tc","ptot"]]
 #lkey   = [[1,tag,"ptot"] for tag in ["tc","cf","ms","ot"]]
+#lkey   = [[1,tag,"frac.ptot"] for tag in ["tc","cf","ms","ot"]]
+#lkey   = [["p99.990",tag,"frac.ptot"] for tag in ["tc","cf","ms","ot"]]
+lkey   = [["p99.990",tag,"frac.freq"] for tag in ["tc","cf","ms","ot"]]
+#lkey   = [["p99.990",tag,"freq"] for tag in ["tc","cf","ms","ot"]]
 #lkey   = [[1,"plain","ptot"],[1,"plain","freq"],[1,"plain","pint"]]
 #lkey   = [[1,"plain","freq"],[1,"plain","pint"]]
 #lkey   = [[1,"plain","freq"],[1,"plain","pint"]]
@@ -136,7 +140,6 @@ def load_var_single(scen, ens, tag, var, thpr):
     elif var == "freq":
         totalnum = calc_totaltimes(iYear,eYear,season)
         a2num = load_var_single(scen,ens,tag, "num", thpr)
-        print scen,ens,a2num.max()
         a2out = a2num / float(nYear)   # times per season
         return a2out
 
@@ -147,6 +150,17 @@ def load_var_single(scen, ens, tag, var, thpr):
         a2out = a2sum / a2num * 60*60*24.  #[mm/day]
         return a2out
 
+    elif var == "frac.ptot":
+        a2all = load_var_single(scen,ens,"plain","ptot",thpr)
+        a2tag = load_var_single(scen,ens,tag    ,"ptot",thpr)
+        a2out = a2tag / a2all
+        return a2out
+
+    elif var == "frac.freq":
+        a2all = load_var_single(scen,ens,"plain","freq",thpr)
+        a2tag = load_var_single(scen,ens,tag    ,"freq",thpr)
+        a2out = a2tag / a2all
+        return a2out
 
 
 def load_var_3D(scen, lens, tag, var, thpr):
@@ -216,7 +230,13 @@ for [thpr, tag, var] in lkey:
             bnd = None
             vmin, vmax = -0.2, 0.2
 
+        elif (var in ["frac.ptot","frac.freq"]):
+            bnd = [-0.2,-0.15,-0.1,-0.05,0.05,0.1,0.15,0.2]
+            vmin, vmax = -0.2, 0.2
+            a2hatch    = ma.masked_where(abs(a2dif)<0.05, a2hatch).filled(miss)
+
+
 
         cmap   = "RdBu_r"
         #hd_fig.DrawMap_dotshade(a2dif, a2dot, Lat, Lon, bnd=bnd, figname=figPath, cbarname=cbarPath, dotstep=2, markersize=0.2, stitle=stitle) 
-        f_draw_mapglobal.draw_map_robin(a2dat=a2dif, a2hatch=a2hatch, Lat=Lat, Lon=Lon, miss=-9999, bnd=bnd, cmap=cmap, vmin=vmin, vmax=vmax, figPath=figPath, cbarPath=cbarPath, lregion=lregion,stitle=stitle) 
+        f_draw_mapglobal.draw_map_robin(a2dat=a2dif, a2hatch=a2hatch, Lat=Lat, Lon=Lon, miss=-9999, bnd=bnd, cmap=cmap, vmin=vmin, vmax=vmax, figPath=figPath, cbarPath=cbarPath, cbarOrientation="horizontal",lregion=lregion,stitle=stitle) 

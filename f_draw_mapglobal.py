@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+import matplotlib.patheffects as patheffects
 from numpy import *
 from matplotlib.colors import Normalize
 from mpl_toolkits.axes_grid1 import AxesGrid
@@ -192,10 +193,6 @@ dotstep = 3
 miss  = -9999.
 midpoint = None
 
-lregion=['ALA','AMZ','CAM','CAR*','CAS','CEU','CGI','CNA','EAF','EAS','ENA','MED','NAS','NAU','NEB','NEU','SAF','SAH','SAS','SAU','SEA','SSA','TIB','WAF','WAS','WNA','WSA','ANT*','ARC*','NTP*','STP*','ETP*','WIO*']
-
-
-lregion=['ALA','AMZ','CAM','CAR*','CAS','CEU','CGI','CNA']
 
 # Load Sample data
 figDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/ptile"
@@ -256,14 +253,13 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="RdBu_r"
     
     
     # Shapefile
-    if type(lregion) != bool: lregion=[]
-
+    if lregion == None: lregion=[]
     sf    = shapefile.Reader(shapePath)
     shapes = sf.shapes()
     records= sf.records()
     for [record, shape] in zip(records, shapes):
         code=record[1]
-    
+
         if code not in lregion: continue
         regionnum = int(record[0].split(":")[-1][:-1])
         # simple plotting
@@ -302,7 +298,6 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="RdBu_r"
                 x_prj0, y_prj0 = M(x0,y0)
                 x_prj1, y_prj1 = M(x1,y1)
                 M.plot((x_prj0,x_prj1),(y_prj0,y_prj1),linewidth=1.3,color="0.2",alpha=0.8) 
-
         # plot region code
         x_txt, y_txt = max(xx)-15,  min(yy)+2
 
@@ -331,7 +326,7 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="RdBu_r"
 
 
         x_txt, y_txt = M(x_txt,y_txt)
-        plt.text(x_txt, y_txt, "%s"%(regionnum), color="r", fontsize=10)
+        plt.text(x_txt, y_txt, "%s"%(regionnum), color="k", fontsize=12, path_effects=[patheffects.withStroke(linewidth=3, foreground="w")])
  
     # Title
     if stitle !=None:

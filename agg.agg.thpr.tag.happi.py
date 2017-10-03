@@ -18,7 +18,7 @@ prj     = "HAPPI"
 model   = "MIROC5"
 expr    = "C20"
 #lscen   = ["ALL","P15","P20"]
-lscen   = ["P15","P20"]
+lscen   = ["ALL","P20"]
 #lscen   = ["P20"]
 #lscen   = ["P15"]
 #lscen   = ["ALL"]
@@ -31,10 +31,11 @@ ny, nx  = 128, 256
 
 #lthpr = [0,"p99.900","p99.990"]
 #lthpr = [0,"p99.900"]
+lthpr = [1,"p99.900","p99.990"]
 #lthpr = ["p99.900","p99.990"]
 #lthpr = ["p99.990"]
 #lthpr = ["p99.900"]
-lthpr = [1]
+#lthpr = [1]
 
 ltag  = ["tc","cf","ms","ot"]
 ltag_ws  = [tag for tag in ltag if tag !="ot"]

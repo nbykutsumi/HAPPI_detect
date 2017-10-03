@@ -125,18 +125,19 @@ for (scen, thpr, vartype) in lKey:
 
         # Figure
 
-        bnd  = [0,100,400,700,1000,1300,1600,1900,2200,2500,2800]
+        #bnd  = [0,100,400,700,1000,1300,1600,1900,2200,2500,2800]
+        bnd  = arange(0,2800+1,50)
         #bnd = ret_bnd(vartype, thpr)
         #bnd  = None
         #bnd  = range(0,300+1,20)
 
-        cmap = "jet_r"
-        vmax = None
-        vmin = None
+        #cmap = "jet_r"
+        #vmax = None
+        #vmin = None
 
-        #cmap = "gnuplot2_r"
-        #vmax = 2800
-        #vmin = 0
+        cmap = "gnuplot2_r"
+        vmax = 2800
+        vmin = 0
 
         #extend = "both"   # "neither","both","min","max"
         #extend = "neither"   # "neither","both","min","max"

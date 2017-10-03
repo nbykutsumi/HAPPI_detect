@@ -13,23 +13,24 @@ detectName  = cfg.get("Defaults","detectName")
 config_func = import_module("%s.config_func"%(detectName))
 Front       = import_module("%s.Front"%(detectName))
 #--------------------------------------------------------
-prj     = "JRA55"
-model   = "__"
-run     = "__"
-lens    = [1]
-res     = "145x288"
-ny,nx   = 145,288
-noleap   = False
+#prj     = "JRA55"
+#model   = "__"
+#run     = "__"
+#lens    = [1]
+#res     = "145x288"
+#ny,nx   = 145,288
+#noleap   = False
 
-#prj     = "HAPPI"
-#model   = "MIROC5"
-#expr    = "C20"
-#scen    = "ALL"
+prj     = "HAPPI"
+model   = "MIROC5"
+expr    = "C20"
+scen    = "ALL"
 #lens    = range(1,50+1)
-#run     = "C20-ALL-001"  # for config
-#res     = "128x256"
-#ny,nx   = 128, 256
-#noleap  = True
+lens    = range(23,50+1)
+run     = "C20-ALL-001"  # for config
+res     = "128x256"
+ny,nx   = 128, 256
+noleap  = True
 
 ret_lDTime = {False: util.ret_lDTime
              ,True : util.ret_lDTime_noleap

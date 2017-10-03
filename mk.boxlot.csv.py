@@ -31,6 +31,7 @@ ChangeRat= True
 #lregion    = ["HOKKAIDO"]
 #lens       = [1,11,21,31,41]
 lens       = range(1,50+1)
+#lens       = range(1,2+1)
 #lthpr      = [0,"p99.900","p99.990"]
 #lthpr      = ["p99.900","p99.990"]
 lscen      = ["ALL","P15","P20"]
@@ -83,6 +84,7 @@ for [scen,tag] in lkey:
 
 lvartype   = ["Ptot","Freq","Pint"]
 #lvartype   = ["Ptot"]
+sout = ""
 for vartype in lvartype:
 
     if Total == False: continue
@@ -112,10 +114,6 @@ for vartype in lvartype:
             else:
                 ddraw[tag] = True
 
-        #--- ylim -----------
-        #dylim = None
-        #dytick= {tag:None for tag in ltag}
-
         #--- statistical test --
         dsig  = {}
         for tag in ltag:
@@ -133,20 +131,12 @@ for vartype in lvartype:
             if p <0.05: dsig[tag].append(True)
             else:  dsig[tag].append(False)
 
+        
 
 
 
-        #--- title ----------
-        regNum  = dregInfo[region][0]
-        stitle1 = "%s (%d)"%(region, regNum)
-        stitle2 = "%s (%s thres=%s)"%(region, vartype, thpr)
-        if dsig["plain"][1] ==True: stitle1 = "*" + stitle1
+# Path
 
-        # Path
-        figPath = figDir  + "/boxplot.%s.th.%s.%s.png"%(vartype, thpr, region)
-
-        #f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, dylim)
-        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, ddraw)
 
 
 #**********************************
@@ -322,9 +312,9 @@ for thpr in lthpr:
 #----------------------------------
 #lkey1      = [[1,"Ptot"],[1,"Freq"],[1,"Pint"],["99.900","Freq"],["p99.990","Freq"]]
 #lkey1      = [[1,"Ptot"],[1,"Freq"],[1,"Pint"]]
-#lkey1      = [["p99.900","Freq"],["p99.990","Freq"]]
-lkey1      = [["p99.990","Freq"]]
-#lkey1      = [[1,"Ptot"]]
+lkey1      = [[1,"Ptot"],[1,"Freq"],[1,"Pint"],["p99.900","Freq"],["p99.990","Freq"]]
+
+sout = "Var,thpr,region,tag,P15_sig,P15,P20_sig,P20" + "\n"
 for thpr, vartype in lkey1:
 
     if ChangeRat == False: continue
@@ -361,53 +351,6 @@ for thpr, vartype in lkey1:
                 lvout  = lvfut/vpre
                 dldat[tag].append(lvout)
 
-        #--- ddraw -----------
-        ddraw = {}
-        for tag in ltag:
-            lmeanPrcp = [mean(Prcp[region,tag,scen]) for scen in lscen]
-            if region=="GLB":
-                ddraw[tag] = True
-            elif max(lmeanPrcp) < PtotMin:
-                ddraw[tag] = False
-            else:
-                ddraw[tag] = True
-
-        #--- ylim -----------
-        dylim = {}
-        dytick= {}
-        lmean = []
-        for tag in ltag:
-            for dat in dldat[tag]:
-                if ddraw[tag] ==True:
-                    lmean.append(abs(dat.mean()-1.0))
-                else:
-                    lmean.append(nan)
-
-        if thpr == 1:
-            difMax = 0.1
-            lytick = [0.95, 1.0, 1.05]
-        elif thpr in ["p99.900"]:
-            difMax = 1.0
-            lytick = [0.5, 1.0, 1.5]
-        elif thpr in ["p99.990"]:
-            difMax = 1.0
-            lytick = [1.0, 1.5]
-
-
-        if max(lmean) > difMax:
-            #ymin =1.0 - max(lmean)*1.3
-            ymin = 0.9
-            ymax =1.0 + max(lmean)*1.3
-            for tag in ltag: dytick[tag] = None
-        else:
-            #ymin = 1.0-difMax
-            ymin = 0.9
-            ymax = 1.0+difMax
-            for tag in ltag: dytick[tag]= lytick
-
-        for tag in ltag: dylim[tag] = [ymin,ymax]
-
-
         #--- statistical test --
         dsig  = {}
         for tag in ltag:
@@ -425,18 +368,21 @@ for thpr, vartype in lkey1:
             if p <0.05: dsig[tag].append(True)
             else:  dsig[tag].append(False)
 
-        #--- title ----------
-        regNum  = dregInfo[region][0]
-        stitle1 = "%s (%d)"%(region, regNum)
-        stitle2 = "%s (%s thres=%s)"%(region, vartype, thpr)
-        #if dp["plain"] < 0.05: stitle1 = "*" + stitle1
 
-        # Path
-        figPath = figDir  + "/boxplot.rat.%s.th.%s.%s.png"%(vartype, thpr, region)
+        for tag in ltag:
+            sout = sout + "%s,%s,%s,%s,"%(vartype,thpr,region,tag)
+            sout = sout + "%s,%s,%s,%s"%(dsig[tag][1],dldat[tag][1].mean(),dsig[tag][2],dldat[tag][2].mean()) + "\n"
+        print "*"*50
+        print sout
 
-        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, ddraw, dylim, dytick=dytick, hline=1)
+print sout
 
-
+# Path
+figPath = figDir  + "/table.boxplot.rat.csv"
+f = open(figPath,"w")
+f.write(sout)
+f.close()
+print figPath
 
 #**********************************
 # extreme values (99.9 & 99.99 percentiles)

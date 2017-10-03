@@ -23,8 +23,8 @@ IO_Master   = import_module("%s.IO_Master"%(detectName))
 
 #--------------------------------------------------------
 
-prj     = "JRA55"
-#prj     = "HAPPI"
+#prj     = "JRA55"
+prj     = "HAPPI"
 season  = "ALL"
 
 modelRef   = "__"

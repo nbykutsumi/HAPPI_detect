@@ -12,6 +12,7 @@ lregion     = ["GLB","ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA"
 lkey   = [["p99.900","rat.Freq"],["p99.990","rat.Freq"]]
 #lkey   = [["p99.900","Freq"],["p99.990","Freq"]]
 #lkey   = [[1,"Fraction.Ptot"],["p99.900","Fraction.Ptot"],["p99.990","Fraction.Ptot"]]
+#lkey   = [["p99.900","Fraction.Freq"],["p99.990","Fraction.Freq"]]
 
 figDir = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/fig"
 

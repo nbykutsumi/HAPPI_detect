@@ -8,9 +8,9 @@ import scipy.stats
 def draw_boxplot_multi(dldat, dsig, ltag, stitle, figPath, ddraw=None, dylim=None, dytick=None, hline=None):
     #-- Figure --------
     if len(ltag)==4:
-        figplot = plt.figure(figsize=(0.8,2.1))
+        figplot = plt.figure(figsize=(0.9,2.1))
     elif len(ltag)==5:
-        figplot = plt.figure(figsize=(0.8,2.6))
+        figplot = plt.figure(figsize=(0.9,2.6))
 
     for itag,tag in enumerate(ltag[::-1]):
 
@@ -30,9 +30,10 @@ def draw_boxplot_multi(dldat, dsig, ltag, stitle, figPath, ddraw=None, dylim=Non
         nscen  = len(ldat)
 
         medianprops = dict(linestyle='-', linewidth=0, color='blue')
+        dcolor = {1:"cyan",2:"red"}
         for iscen, dat in enumerate(ldat):
-            if (dsig[tag] == True)&(iscen==2):
-                meanprops   = dict(linestyle='-', linewidth=2.3, color='red')
+            if dsig[tag][iscen] == True:
+                meanprops   = dict(linestyle='-', linewidth=2.3, color=dcolor[iscen])
             else:
                 meanprops   = dict(linestyle='-', linewidth=2.3, color='blue')
 

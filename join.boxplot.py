@@ -23,6 +23,13 @@ dieYear = {"JRA":[2006,2014]
 
 season = "ALL"
 
+#- Switch  ------------
+Total    = False
+ExFreq   = False
+Fraction = True
+#ChangeRat= False
+
+
 # Directory
 thpr = 0
 iYear_fut, eYear_fut = dieYear["P20"]
@@ -75,6 +82,7 @@ def add_title(oimg, stitle):
 thpr = 0
 lvartype = ["Ptot","Freq","Pint"]
 for vartype in lvartype:
+    if Total == False: continue
     da2dat  = {}
     for iregion,region in enumerate(lregion):
         figPath = figDir + "/boxplot.%s.th.%s.%s.png"%(vartype, thpr, region)
@@ -102,6 +110,8 @@ for vartype in lvartype:
 vartype = "Freq"
 lthpr  = ["p99.900","p99.990"]
 for thpr in lthpr:
+    if ExFreq == False: continue
+
     da2dat  = {}
     for iregion,region in enumerate(lregion):
         figPath = figDir + "/boxplot.%s.th.%s.%s.png"%(vartype, thpr, region)
@@ -125,9 +135,15 @@ for thpr in lthpr:
 # Proportion for Extreme precipitation
 #----------------------
 #"""
-vartype = "Freq"
-lthpr  = ["p99.900","p99.990"]
+#vartype = "Freq"
+#lthpr  = ["p99.900","p99.990"]
+
+vartype = "Ptot"
+lthpr  = [1,"p99.900","p99.990"]
+
 for thpr in lthpr:
+    if Fraction == False: continue
+
     da2dat  = {}
     for iregion,region in enumerate(lregion):
         figPath = figDir + "/boxplot.Fraction.%s.th.%s.%s.png"%(vartype, thpr, region)
@@ -139,7 +155,7 @@ for thpr in lthpr:
     oimg      = Image.fromarray(a2oarray)
 
     # Add text
-    stitle    = "Proportions th=%s"%(thpr)
+    stitle    = "Proportions %s th=%s"%(vartype, thpr)
     oimg      = add_title(oimg, stitle)
 
     oPath     = figDir + "/join.boxplot.Fraction.%s.th.%s.png"%(vartype, thpr)
