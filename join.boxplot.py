@@ -27,7 +27,7 @@ season = "ALL"
 Total    = False
 ExFreq   = False
 Fraction = True
-#ChangeRat= False
+ChangeRat= False
 
 
 # Directory

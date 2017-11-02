@@ -21,19 +21,10 @@ regiontype = "IPCC"
 lregion     = ["GLB","ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA","MED","NAS","NAU","NEB","NEU","SAF","SAH","SAS","SAU","SSA","SEA","TIB","WAF","WAS","WSA","WNA"]
 #lregion    = ["ALA"]
 
-PtotMin = 10   # mm/year
-#- Switch  ------------
-Total    = False
-ExFreq   = False
-Fraction = False
-ChangeRat= True
 #----------------------
-#lregion    = ["HOKKAIDO"]
 #lens       = [1,11,21,31,41]
 lens       = range(1,50+1)
 #lens       = range(1,2+1)
-#lthpr      = [0,"p99.900","p99.990"]
-#lthpr      = ["p99.900","p99.990"]
 lscen      = ["ALL","P15","P20"]
 ltag       = ["plain","tc","cf","ms","ot"]
 wbar       = 0.8
@@ -49,278 +40,44 @@ dTagName   = {"plain":"All","tc":"TC","cf":"ExC","ms":"MS","ot":"OT"}
 season     = "ALL"
 
 dregInfo   = hd_func.dict_IPCC_codeKey()
+lregnum = []
+for region in lregion:
+    num = dregInfo[region][0]
+    lregnum.append([region,num])
+
+lregnum = sorted(lregnum, key= lambda x: x[1])
+
+
 #---------------------------------    
 # Dirs
-iYear_fut, eYear_fut = dieYear["P20"]
-run  = "C20-P15-001"
-#baseDir, sDir = hd_func.path_dpr(model=model, run=run, res=res, sthpr=0, tag="plain", iYear=iYear_fut, eYear=eYear_fut, season=season, var="dP")[0:2]
 baseDir = "/home/utsumi/mnt/wellshare/HAPPI/anlWS"
 figDir  = baseDir + "/fig"
 
 
 
-#**********************************
-# Ptot, Freq, Pint for Total precipitation
-#----------------------------------
-
-thpr = 1
-lkey  = [[scen,tag] for scen in lscen for tag in ltag]
-
-Prcp = {}
-Freq = {}
-Pint = {}
-for [scen,tag] in lkey:
-    #if Total == False: continue
-
-    da1prcp, da1freq, da1pint = ret_PN.main( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
-    #print scen,tag,da1prcp
+Vtot = {}
+for tag in ltag:
+    # load total precip
+    da1prcp0, da1freq0, da1pint0 = ret_PN.main( thpr=1, scen="ALL", tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
+    da1prcp1, da1freq1, da1pint1 = ret_PN.main( thpr=1, scen="P15", tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
+    da1prcp2, da1freq2, da1pint2 = ret_PN.main( thpr=1, scen="P20", tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
 
     for region in lregion:
-        Prcp[region,tag,scen] = da1prcp[region]
-        Freq[region,tag,scen] = da1freq[region]*4*365
-        Pint[region,tag,scen] = da1pint[region]
-
-
-
-lvartype   = ["Ptot","Freq","Pint"]
-#lvartype   = ["Ptot"]
-sout = ""
-for vartype in lvartype:
-
-    if Total == False: continue
-
-    if   vartype == "Ptot":
-        Var = Prcp
-    elif vartype == "Freq":
-        Var = Freq
-    elif vartype == "Pint":
-        Var = Pint
-        
-    for region in lregion:
-        dldat = {}
-        for tag in ltag:
-            dldat[tag] = []
-            for scen in lscen:
-                dldat[tag].append(Var[region,tag,scen])
-
-        #--- ddraw -----------
-        ddraw = {}
-        for tag in ltag:
-            lmeanPrcp = [mean(Prcp[region,tag,scen]) for scen in lscen]
-            if region=="GLB":
-                ddraw[tag] = True
-            elif max(lmeanPrcp) < PtotMin:
-                ddraw[tag] = False
-            else:
-                ddraw[tag] = True
-
-        #--- statistical test --
-        dsig  = {}
-        for tag in ltag:
-            dat0  = dldat[tag][0]
-            dat1  = dldat[tag][1]
-            dat2  = dldat[tag][2]
-
-            t, p  = scipy.stats.ttest_ind(dat0,dat1,equal_var=False)
-            dsig[tag] = [False]
-
-            if p <0.05: dsig[tag].append(True)
-            else:  dsig[tag].append(False)
-
-            t, p  = scipy.stats.ttest_ind(dat1,dat2,equal_var=False)
-            if p <0.05: dsig[tag].append(True)
-            else:  dsig[tag].append(False)
-
-        
-
-
-
-# Path
-
+        Vtot[region,tag,"ALL"] = da1prcp0[region]
+        Vtot[region,tag,"P15"] = da1prcp1[region]
+        Vtot[region,tag,"P20"] = da1prcp2[region]
 
 
 #**********************************
-# Freq for extreme precipitation
-#----------------------------------
-lthpr     = ["p99.900","p99.990"]
-vartype   = "Freq"
-for thpr in lthpr:
+lkey1      = [["p99.990","Freq"]]
+#lkey1      = [[1,"Ptot"],[1,"Freq"],[1,"Pint"],["p99.990","Freq"],["p99.990","Ptot"]]
 
-    if ExFreq == False: continue
-
-    lkey  = [[scen,tag] for scen in lscen for tag in ltag]
-    
-    Freq   = {}
-    for [scen,tag] in lkey:
-        da1freq = ret_PN.load_Freq( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
-
- 
-        print "loading",thpr,scen,tag
-        for region in lregion:
-            Freq[region,tag,scen] = da1freq[region]*4*365
-
-
-    Var = Freq
-    for region in lregion:
-        dldat = {}
-        for tag in ltag:
-            dldat[tag] = []
-            for scen in lscen:
-                dldat[tag].append(Var[region,tag,scen])
-
-        #--- ddraw -----------
-        ddraw = {}
-        for tag in ltag:
-            lmeanPrcp = [mean(Prcp[region,tag,scen]) for scen in lscen]
-            if region=="GLB":
-                ddraw[tag] = True
-            elif max(lmeanPrcp) < PtotMin:
-                ddraw[tag] = False
-            else:
-                ddraw[tag] = True
-
-    
-        #--- ylim -----------
-        #dylim = None
-
-        #--- statistical test --
-        dsig  = {}
-        for tag in ltag:
-            dat0  = dldat[tag][0]
-            dat1  = dldat[tag][1]
-            dat2  = dldat[tag][2]
-
-            t, p  = scipy.stats.ttest_ind(dat0,dat1,equal_var=False)
-            dsig[tag] = [False]
-
-            if p <0.05: dsig[tag].append(True)
-            else:  dsig[tag].append(False)
-
-            t, p  = scipy.stats.ttest_ind(dat1,dat2,equal_var=False)
-            if p <0.05: dsig[tag].append(True)
-            else:  dsig[tag].append(False)
-
-
-        #--- title ----------
-        regNum  = dregInfo[region][0]
-        stitle1 = "%s (%d)"%(region, regNum)
-        if dsig["plain"] == True: stitle1 = "*" + stitle1
-    
-        # Path
-        figPath = figDir  + "/boxplot.%s.th.%s.%s.png"%(vartype, thpr, region)
-    
-        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, ddraw)
-
-
-#**********************************
-# Proportion to all precip
-#----------------------------
-
-lthpr  = [1,"p99.900","p99.990"]
-vartype="Ptot"
-#lthpr  = ["p99.900","p99.990"]
-#vartype="Freq"
-
-for thpr in lthpr:
-
-    if Fraction == False: continue
-
-    lkey  = [[scen,tag] for scen in lscen for tag in ltag]
-
-    Var  = {}
-    Frac = {}
-    for [scen,tag] in lkey:
-        print "loading",thpr,scen,tag
-        if vartype =="Ptot":
-            da1prcp, da1freq, da1pint = ret_PN.main( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
-
-        elif vartype =="Freq":
-            da1freq = ret_PN.load_Freq( thpr=thpr, scen=scen, tag=tag, regiontype=regiontype, lregion=lregion, lens=lens, lndsea="lnd")
-
-         
-        for region in lregion:
-            if vartype=="Freq":
-                Var[region,tag,scen] = da1freq[region]
-            elif vartype=="Ptot":
-                Var[region,tag,scen] = da1prcp[region]
-
-
-    for [scen,tag] in lkey:
-        for region in lregion:
-            Frac[region,tag,scen] = ma.masked_invalid(Var[region,tag,scen]/Var[region,"plain",scen]).filled(0.0)
-
-
-    Var = Frac
-    for region in lregion:
-        dldat = {}
-        for tag in ltag:
-            if tag == "plain":continue
-
-            dldat[tag] = []
-            for scen in lscen:
-                dldat[tag].append(Var[region,tag,scen])
-
-        #--- ddraw -----------
-        ddraw = {}
-        for tag in ltag:
-            lmeanPrcp = [mean(Prcp[region,tag,scen]) for scen in lscen]
-            if region=="GLB":
-                ddraw[tag] = True
-            elif max(lmeanPrcp) < PtotMin:
-                ddraw[tag] = False
-            else:
-                ddraw[tag] = True
-
-        #--- statistical test --
-        dsig  = {}
-        for tag in ["tc","cf","ms","ot"]:
-            dat0  = dldat[tag][0]
-            dat1  = dldat[tag][1]
-            dat2  = dldat[tag][2]
-
-            t, p  = scipy.stats.ttest_ind(dat0,dat1,equal_var=False)
-            dsig[tag] = [False]
-
-            if p <0.05: dsig[tag].append(True)
-            else:  dsig[tag].append(False)
-
-            t, p  = scipy.stats.ttest_ind(dat1,dat2,equal_var=False)
-            if p <0.05: dsig[tag].append(True)
-            else:  dsig[tag].append(False)
-
-
-        #--- title ----------
-        regNum  = dregInfo[region][0]
-        stitle1 = "%s (%d)"%(region, regNum)
-
-
-        # Path
-        figPath = figDir  + "/boxplot.Fraction.%s.th.%s.%s.png"%(vartype, thpr, region)
-
-        #--- ylim -----------
-        #dylim = None
-
-
-        # Draw
-        ltag_tmp = ["tc","cf","ms","ot"]
-
-        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag_tmp,stitle1,figPath, ddraw=ddraw)
-
-
-#**********************************
-# fractional change Ptot, Freq, Pint for Total precipitation
-#----------------------------------
-#lkey1      = [[1,"Ptot"],[1,"Freq"],[1,"Pint"],["99.900","Freq"],["p99.990","Freq"]]
-#lkey1      = [[1,"Ptot"],[1,"Freq"],[1,"Pint"]]
-lkey1      = [[1,"Ptot"],[1,"Freq"],[1,"Pint"],["p99.900","Freq"],["p99.990","Freq"]]
-
-sout = "Var,thpr,region,tag,P15_sig,P15,P20_sig,P20" + "\n"
+sout = ",,,"+",ALL"*7+",TC"*7+",ExC"*7+",Monsoon"*7+",Others"*7 +"\n"
+sout = sout + "thpr,vartype,num,region" + ",ALL,P15,P20,pv,dif%%P15,pv,dif%%P20"*5 + "\n"
 for thpr, vartype in lkey1:
-
-    if ChangeRat == False: continue
-
     Var = {}
-    Rat = {}
+    PV  = {}
+
     lkey2 = [[scen,tag] for scen in ["ALL","P15","P20"] for tag in ltag]
     for [scen,tag] in lkey2:
         print "loading",thpr,scen,tag
@@ -335,13 +92,11 @@ for thpr, vartype in lkey1:
             if vartype=="Ptot":
                 Var[region,tag,scen] = da1prcp[region]
             elif vartype=="Freq":
-                Var[region,tag,scen] = da1freq[region]
+                Var[region,tag,scen] = da1freq[region] *4 * 365.  # [#/season]
             elif vartype=="Pint":
                 Var[region,tag,scen] = da1pint[region]
 
-
-
-    for region in lregion:
+    for region,num in lregnum:
         dldat = {}
         for tag in ltag:
             dldat[tag] = []
@@ -360,22 +115,44 @@ for thpr, vartype in lkey1:
 
             t, p  = scipy.stats.ttest_ind(dat0,dat1,equal_var=False)
             dsig[tag] = [False]
-
+            PV[tag,"P15"]   = p
             if p <0.05: dsig[tag].append(True)
             else:  dsig[tag].append(False)
 
             t, p  = scipy.stats.ttest_ind(dat1,dat2,equal_var=False)
+            PV[tag,"P20"]   = p
             if p <0.05: dsig[tag].append(True)
             else:  dsig[tag].append(False)
 
 
+        sout = sout + "%s,%s,%s,%s"%(thpr,vartype,num,region)
         for tag in ltag:
-            sout = sout + "%s,%s,%s,%s,"%(vartype,thpr,region,tag)
-            sout = sout + "%s,%s,%s,%s"%(dsig[tag][1],dldat[tag][1].mean(),dsig[tag][2],dldat[tag][2].mean()) + "\n"
-        print "*"*50
-        print sout
+            if max(mean(Vtot[region,tag,"ALL"])
+                  ,mean(Vtot[region,tag,"P15"])
+                  ,mean(Vtot[region,tag,"P20"])
+                  )  < 10.:  # mm/year
+                v0   = ""
+                v1   = ""
+                v2   = ""
+                p1   = ""
+                p2   = ""
+                rat1 = ""
+                rat2 = ""
+            else:
+                v0   = mean(Var[region,tag,"ALL"])
+                v1   = mean(Var[region,tag,"P15"])
+                v2   = mean(Var[region,tag,"P20"])
+                p1   = PV[tag,"P15"]
+                p2   = PV[tag,"P20"]
+                rat1 = (v1-v0)/v0*100.
+                rat2 = (v2-v0)/v0*100.
 
-print sout
+            stmp = ",%s,%s,%s,%s,%s,%s,%s"%(
+                    v0,v1,v2,p1,rat1,p2,rat2)
+            sout = sout + stmp
+        sout = sout.strip() + "\n"
+
+
 
 # Path
 figPath = figDir  + "/table.boxplot.rat.csv"

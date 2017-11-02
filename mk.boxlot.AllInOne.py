@@ -31,6 +31,7 @@ ChangeRat= True
 #lregion    = ["HOKKAIDO"]
 #lens       = [1,11,21,31,41]
 lens       = range(1,50+1)
+#lens       = range(1,3+1)
 #lthpr      = [0,"p99.900","p99.990"]
 #lthpr      = ["p99.900","p99.990"]
 lscen      = ["ALL","P15","P20"]
@@ -47,12 +48,17 @@ dieYear = {"JRA":[2006,2014]
 dTagName   = {"plain":"All","tc":"TC","cf":"ExC","ms":"MS","ot":"OT"}
 season     = "ALL"
 
-dregInfo   = hd_func.dict_IPCC_codeKey()
+# lregnum ---------
+dregion = hd_func.dict_IPCC_codeKey()
+lregnum = []
+for region in lregion:
+    num = dregion[region][0]
+    lregnum.append([region,num])
+
+lregnum = sorted(lregnum, key= lambda x: x[1])
+
 #---------------------------------    
 # Dirs
-iYear_fut, eYear_fut = dieYear["P20"]
-run  = "C20-P15-001"
-#baseDir, sDir = hd_func.path_dpr(model=model, run=run, res=res, sthpr=0, tag="plain", iYear=iYear_fut, eYear=eYear_fut, season=season, var="dP")[0:2]
 baseDir = "/home/utsumi/mnt/wellshare/HAPPI/anlWS"
 figDir  = baseDir + "/fig"
 
@@ -323,14 +329,13 @@ for thpr in lthpr:
 #lkey1      = [[1,"Ptot"],[1,"Freq"],[1,"Pint"],["99.900","Freq"],["p99.990","Freq"]]
 #lkey1      = [[1,"Ptot"],[1,"Freq"],[1,"Pint"]]
 #lkey1      = [["p99.900","Freq"],["p99.990","Freq"]]
-lkey1      = [["p99.990","Freq"]]
-#lkey1      = [[1,"Ptot"]]
+#lkey1      = [["p99.990","Freq"]]
+lkey1      = [[1,"Ptot"]]
 for thpr, vartype in lkey1:
 
     if ChangeRat == False: continue
 
     Var = {}
-    Rat = {}
     lkey2 = [[scen,tag] for scen in ["ALL","P15","P20"] for tag in ltag]
     for [scen,tag] in lkey2:
         print "loading",thpr,scen,tag
@@ -351,134 +356,122 @@ for thpr, vartype in lkey1:
 
 
 
+    dldat0 = {}
+    dldat1 = {}
+    dldat2 = {}
+    dsig1  = {}
+    dsig2  = {}
+    drawFlag = {}
     for region in lregion:
-        dldat = {}
         for tag in ltag:
-            dldat[tag] = []
+            dldat0[region,tag] = []
+            dldat1[region,tag] = []
+            dldat2[region,tag] = []
+
             for scen in ["ALL","P15","P20"]:
                 lvfut  = Var[region,tag,scen]
                 vpre   = Var[region,tag,"ALL"].mean()
                 lvout  = lvfut/vpre
-                dldat[tag].append(lvout)
-
+                if   scen =="ALL":
+                    dldat0[region,tag] = lvout
+                elif scen =="P15":
+                    dldat1[region,tag] = lvout
+                elif scen == "P20":
+                    dldat2[region,tag] = lvout
+        
         #--- ddraw -----------
-        ddraw = {}
         for tag in ltag:
             lmeanPrcp = [mean(Prcp[region,tag,scen]) for scen in lscen]
             if region=="GLB":
-                ddraw[tag] = True
+                drawFlag[region,tag] = True
             elif max(lmeanPrcp) < PtotMin:
-                ddraw[tag] = False
+                drawFlag[region,tag] = False
             else:
-                ddraw[tag] = True
+                drawFlag[region,tag] = True
 
-        #--- ylim -----------
-        dylim = {}
-        dytick= {}
-        lmean = []
-        for tag in ltag:
-            for dat in dldat[tag]:
-                if ddraw[tag] ==True:
-                    lmean.append(abs(dat.mean()-1.0))
-                else:
-                    lmean.append(nan)
+        #for tag in ltag: dylim[tag] = [ymin,ymax]
+        if   thpr in [1]:
+            lylim = [0.76, 1.24]
+            yminor= None
+            ymajor= None
 
-        if thpr == 1:
-            difMax = 0.1
-            lytick = [0.95, 1.0, 1.05]
-        elif thpr in ["p99.900"]:
-            difMax = 1.0
-            lytick = [0.5, 1.0, 1.5]
         elif thpr in ["p99.990"]:
-            difMax = 1.0
-            lytick = [1.0, 1.5]
+            lylim = [0.8, 2.3]
+            yminor= 0.1
+            ymajor= None
 
-
-        if max(lmean) > difMax:
-            #ymin =1.0 - max(lmean)*1.3
-            ymin = 0.9
-            ymax =1.0 + max(lmean)*1.3
-            for tag in ltag: dytick[tag] = None
-        else:
-            #ymin = 1.0-difMax
-            ymin = 0.9
-            ymax = 1.0+difMax
-            for tag in ltag: dytick[tag]= lytick
-
-        for tag in ltag: dylim[tag] = [ymin,ymax]
 
 
         #--- statistical test --
-        dsig  = {}
         for tag in ltag:
-            dat0  = dldat[tag][0]
-            dat1  = dldat[tag][1]
-            dat2  = dldat[tag][2]
+            dat0  = dldat0[region,tag]
+            dat1  = dldat1[region,tag]
+            dat2  = dldat2[region,tag]
 
             t, p  = scipy.stats.ttest_ind(dat0,dat1,equal_var=False)
-            dsig[tag] = [False]
-
-            if p <0.05: dsig[tag].append(True)
-            else:  dsig[tag].append(False)
+            if p <0.05: dsig1[region,tag] = True
+            else:  dsig1[region,tag] = False
 
             t, p  = scipy.stats.ttest_ind(dat1,dat2,equal_var=False)
-            if p <0.05: dsig[tag].append(True)
-            else:  dsig[tag].append(False)
-
-        #--- title ----------
-        regNum  = dregInfo[region][0]
-        stitle1 = "%s (%d)"%(region, regNum)
-        stitle2 = "%s (%s thres=%s)"%(region, vartype, thpr)
-        #if dp["plain"] < 0.05: stitle1 = "*" + stitle1
-
-        # Path
-        figPath = figDir  + "/boxplot.rat.%s.th.%s.%s.png"%(vartype, thpr, region)
-
-        f_draw_boxplot.draw_boxplot_multi(dldat,dsig,ltag,stitle1,figPath, ddraw, dylim, dytick=dytick, hline=1)
+            if p <0.05: dsig2[region,tag] = True
+            else:  dsig2[region,tag] = False
 
 
 
-#**********************************
-# extreme values (99.9 & 99.99 percentiles)
-#----------------------------------
-"""
+    #--- GLB line --
+    dlGlbMean = {}
+    for tag in ltag:
+        glbMean0 = mean(dldat0["GLB",tag])
+        glbMean1 = mean(dldat1["GLB",tag])
+        glbMean2 = mean(dldat2["GLB",tag])
 
-lthpr  = ["p99.900","p99.990"]
-for thpr in lthpr:
-    Var  = {}
-    for region in lregion:
-        for scen in lscen:
-            Var[region,scen] = []
+        dlGlbMean[tag]=[glbMean0,glbMean1,glbMean2]
 
-    for scen in lscen:        
-        for ens in lens:
-            sDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/ptile/%s"%(scen)
-            sPath = sDir + "/%s.%s.%s.%s.%03d.%s.%dx%d"%(prj,model,expr, scen, ens, thpr, ny, nx)
-            a2thpr = fromfile(sPath, float32).reshape(ny,nx)*60*60*24
+    #--- hline -----
+    hline = 1.0
+    #--- title ----------
+    stitle = "%s thres=%s"%(vartype, thpr)
+
+    #-- 1st ---
+    lregion_tmp = []
+    for regnum in lregnum[1:13+1]:
+        lregion_tmp.append(regnum[0]) 
+    figPath = figDir  + "/boxplot.rat.%s.th.%s.1.png"%(vartype, thpr)
+
+    f_draw_boxplot.draw_boxplot_Comb(dldat0,dldat1,dldat2,drawFlag,dsig1,dsig2,lregion_tmp,ltag,stitle,figPath,lylim=lylim, ymajor=ymajor, yminor=yminor, hline=hline, dlGlbMean=dlGlbMean)
+
+
+    #-- 2nd ---
+    lregion_tmp = []
+    for regnum in lregnum[14:]:
+        lregion_tmp.append(regnum[0]) 
+
+    figPath = figDir  + "/boxplot.rat.%s.th.%s.2.png"%(vartype, thpr)
+
+    f_draw_boxplot.draw_boxplot_Comb(dldat0,dldat1,dldat2,drawFlag,dsig1,dsig2,lregion_tmp,ltag,stitle,figPath,lylim=lylim, ymajor=ymajor, yminor=yminor, hline=hline, dlGlbMean=dlGlbMean)
+
+
+    #-- GLB ---
+    stitle  = "%s %s"%(0, "GLB")
+    figPath = figDir  + "/boxplot.rat.%s.th.%s.%s.png"%(vartype, thpr, "GLB" )
+
+    DAT0 = {}
+    DAT1 = {}
+    DAT2 = {}
+    DRAW = {}
+    SIG1 = {}
+    SIG2 = {}
+    for tag in ltag:
+        DAT0[tag] = dldat0["GLB",tag]
+        DAT1[tag] = dldat1["GLB",tag]
+        DAT2[tag] = dldat2["GLB",tag]
+
+        DRAW[tag] = True
+
+        SIG1[tag] = dsig1[region,tag]
+        SIG2[tag] = dsig2[region,tag]
+
+    f_draw_boxplot.draw_boxplot_Comb_Single(DAT0,DAT1,DAT2,DRAW,SIG1,SIG2,ltag,stitle,figPath,lylim=lylim, ymajor=ymajor, yminor=yminor, hline=hline, dlGlbMean=dlGlbMean)
+
+
     
-            for region in lregion:
-                a2region = ret_PN.ret_regionmask(regiontype, region, lndsea="lnd")
-                ptile    = ma.masked_where(a2region==miss, a2thpr).mean()
-                Var[region,scen].append(ptile)
-
-
-    Out = Var
-    for region in lregion:
-        #--- title ----------
-        stitle1 = region
-        stitle2 = "%s"%(thpr)
-
-        # Path
-        figPath = figDir  + "/boxplot.ptile.th.%s.%s.png"%(thpr, region)
-
-        # Data
-        ldat = []
-        for scen in lscen:
-            ldat.append(array(Out[region,scen]))
-
-
-        # Draw
-        f_draw_boxplot.draw_boxplot(ldat,stitle1,stitle2,figPath)
-
-"""
-   

@@ -7,9 +7,11 @@ import HAPPI_detect_func as hp_func
 lregion     = ["GLB","ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA","MED","NAS","NAU","NEB","NEU","SAF","SAH","SAS","SAU","SSA","SEA","TIB","WAF","WAS","WSA","WNA"]
 
 
+#lkey   = [[1,"Ptot"]]
 #lkey   = [[1,"Ptot"],[1,"Freq"],[1,"Pint"]]
-#lkey   = [[1,"rat.Ptot"],[1,"rat.Freq"],[1,"rat.Pint"]]
-lkey   = [["p99.900","rat.Freq"],["p99.990","rat.Freq"]]
+lkey   = [[1,"rat.Ptot"],[1,"rat.Freq"],[1,"rat.Pint"]]
+#lkey   = [["p99.900","rat.Freq"],["p99.990","rat.Freq"]]
+#lkey   = [["p99.990","rat.Freq"]]
 #lkey   = [["p99.900","Freq"],["p99.990","Freq"]]
 #lkey   = [[1,"Fraction.Ptot"],["p99.900","Fraction.Ptot"],["p99.990","Fraction.Ptot"]]
 #lkey   = [["p99.900","Fraction.Freq"],["p99.990","Fraction.Freq"]]
@@ -48,7 +50,8 @@ def ret_posbox(num, wbox, hbox):
 
     y = ytop 
     if num==0:
-        x = xleft + int(12*wbox) + 30
+        #x = xleft + int(12*wbox) + 30
+        x = xleft + int(12*wbox) + 5
         pos = (x, y)
         print "*"*50
         print "GLB pos=",pos

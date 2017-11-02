@@ -25,10 +25,10 @@ prj     = "HAPPI"
 model   = "MIROC5"
 expr    = "C20"
 #lscen   = ["ALL","P20","P15"]
-#lscen   = ["P15","P20"]
+lscen   = ["P15","P20"]
 #lscen   = ["P15"]
+#lscen   = ["P20"]
 #lscen   = ["ALL"]
-lscen   = ["P20"]
 #lens    = [2,3,4,5,6,7,8,9,10]
 #lens    = range(12,20+1) + range(22,30+1)
 #lens    = range(32,40+1) + range(42,50+1)
@@ -116,7 +116,8 @@ for scen, ens in lkey:
             # init array
             dsum  = {(tag, thpr):zeros([ny,nx],float32) for tag in ltag+["plain"] for thpr in lthpr}
             
-            dnum  = {(tag, thpr):zeros([ny,nx],int32) for tag in ltag+["plain"] for thpr in lthpr}
+            #dnum  = {(tag, thpr):zeros([ny,nx],int32) for tag in ltag+["plain"] for thpr in lthpr}
+            dnum  = {(tag, thpr):zeros([ny,nx],float32) for tag in ltag+["plain"] for thpr in lthpr}
             
             # init Cyclone
             T.init_cyclone([Year,Mon],[Year,Mon], cfg_det, tctype="obj")
@@ -134,7 +135,8 @@ for scen, ens in lkey:
 
                     for tag in ltag:
                         dsum[tag,thpr] += p * dtag[tag]
-                        dnum[tag,thpr] += (n * dtag[tag]).astype(int32)
+                        #dnum[tag,thpr] += (n * dtag[tag]).astype(int32)
+                        dnum[tag,thpr] += n * dtag[tag]
 
 
             for thpr in lthpr:

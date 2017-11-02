@@ -48,7 +48,8 @@ lMon  = range(1,12+1)
 #lMon = [8]
 
 #lthpr = [0.5,"p99.990"]
-lthpr = ["p99.990","p99.900"]
+#lthpr = ["p99.990","p99.900"]
+lthpr = ["p99.990"]
 #lthpr = [0.5]
 #lthpr = [0.0]
 
@@ -96,7 +97,8 @@ for Year in lYear:
         # init array
         dsum  = {(tag, thpr):zeros([ny,nx],float32) for tag in ltag+["plain"] for thpr in lthpr}
         
-        dnum  = {(tag, thpr):zeros([ny,nx],int32) for tag in ltag+["plain"] for thpr in lthpr}
+        #dnum  = {(tag, thpr):zeros([ny,nx],int32) for tag in ltag+["plain"] for thpr in lthpr}
+        dnum  = {(tag, thpr):zeros([ny,nx],float32) for tag in ltag+["plain"] for thpr in lthpr}
         
         # init Cyclone
         T.init_cyclone([Year,Mon],[Year,Mon], cfg_det, tctype="bst")
@@ -115,7 +117,8 @@ for Year in lYear:
 
                 for tag in ltag:
                     dsum[tag,thpr] += p * dtag[tag]
-                    dnum[tag,thpr] += (n * dtag[tag]).astype(int32)
+                    #dnum[tag,thpr] += (n * dtag[tag]).astype(int32)
+                    dnum[tag,thpr] += (n * dtag[tag]).astype(float32)
 
 
         for thpr in lthpr:

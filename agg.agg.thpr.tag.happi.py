@@ -17,8 +17,8 @@ config_func = import_module("%s.config_func"%(detectName))
 prj     = "HAPPI"
 model   = "MIROC5"
 expr    = "C20"
-#lscen   = ["ALL","P15","P20"]
-lscen   = ["ALL","P20"]
+lscen   = ["ALL","P15","P20"]
+#lscen   = ["ALL","P15"]
 #lscen   = ["P20"]
 #lscen   = ["P15"]
 #lscen   = ["ALL"]
@@ -51,7 +51,7 @@ season = "ALL"
 
 #lthpr = [0.5]
 #lthpr = [0.0,0.5]
-ddtype = {"sum":"float32", "num":"int32"}
+ddtype = {"sum":"float32", "num":"float32"}
 #----------------------
 def ret_sthpr(thpr):
       if type(thpr) == str:
@@ -116,6 +116,6 @@ for (scen, thpr) in lKey:
 
             util.mk_dir(sDir)
             a2sum.astype(float32).tofile(sumPath)
-            a2num.astype(int32  ).tofile(numPath)
+            a2num.astype(float32).tofile(numPath)
             print sumPath 
 

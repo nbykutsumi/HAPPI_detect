@@ -31,9 +31,6 @@ vmin    = 100  # mm/year
 #ltag   = ["plain","tc","cf","ms","ot"]
 
 
-lregion     = ["ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA","MED","NAS","NAU","NEB","NEU","SAF","SAH","SAS","SAU","SSA","SEA","TIB","WAF","WAS","WSA","WNA"]
-#lregion     = ["SAU"]
-
 dieYear = {"ALL": (2006, 2015)
          ,"P15": (2106, 2115)
          ,"P20": (2106, 2115)
@@ -87,46 +84,50 @@ def ret_sthpr(thpr):
 
 # Function ----------
 
-def draw_bar(d_p, d_n, ytick, lylim, stitle, figPath):
+def draw_bar(r_p, r_n, n, n_p, n_n, ytick, lylim, stitle, figPath):
     fig  = plt.figure(figsize=(2.4,3.4))
     ax   = fig.add_axes([0.21,0.28,0.70,0.62])
     ltag = ["All","TC","ExC","Mons","Others"]
     llndsea = ["lnd","sea"]
-    wbar = 0.3
+    wbar = 0.8
 
     for itag, tag in enumerate(ltag):
         x = itag
         colorp="gray"
         colorn="gray"
    
-        y =  d_p[tag]
+        y =  r_p[tag]
         ax.bar(x,y,width=wbar, color=colorp,hatch=None,edgecolor="k")
     
-        y = -d_n[tag]
+        y = -r_n[tag]
         ax.bar(x,y,width=wbar, color=colorn, hatch="////",edgecolor="k")
-    
-    
-        # h-line
-        plt.axhline(0, color="k", linestyle="-",linewidth=0.5)
-    
-        # x-axis
-        lx = [i+0.5*wbar for i in [0,1,2,3,4]]
-        lsx= ltag
-        plt.xticks(lx, lsx, fontsize=14, rotation=90)
-    
-        # y-axis
-        ml  = AutoMinorLocator(2)
-        ax.yaxis.set_minor_locator(ml)
 
-        lyp =  ytick
-        lyn = -lyp[::-1]
-        ly  = concatenate([lyn,[0],lyp],axis=0)
-        lsy = [abs(y) for y in ly]
-        plt.yticks(ly,lsy, fontsize=14)
-        plt.ylim(lylim)
+        #- text ---
+        ax.text(x, r_p[tag]+2, "%s/%s"%(n_p[tag],n[tag]), ha="center",fontsize=8) 
+        ax.text(x,-r_n[tag]-12, "%s/%s"%(n_n[tag],n[tag]), ha="center",fontsize=8) 
     
-        # title
-        plt.title(stitle, fontsize=8)
+    # h-line
+    plt.axhline(0, color="k", linestyle="-",linewidth=0.5)
+    
+    # x-axis
+    #lx = [i+0.5*wbar for i in [0,1,2,3,4]]
+    lx = [i for i in [0,1,2,3,4]]
+    lsx= ltag
+    plt.xticks(lx, lsx, fontsize=14, rotation=-90)
+    
+    # y-axis
+    ml  = AutoMinorLocator(2)
+    ax.yaxis.set_minor_locator(ml)
+
+    lyp =  ytick
+    lyn = -lyp[::-1]
+    ly  = concatenate([lyn,[0],lyp],axis=0)
+    lsy = ["%d"%abs(y) for y in ly]
+    plt.yticks(ly,lsy, fontsize=14)
+    plt.ylim(lylim)
+    
+    # title
+    plt.title(stitle, fontsize=8, y=1.07)
     
     plt.savefig(figPath)
     print figPath
@@ -165,31 +166,54 @@ for line in lines[1:]:
     r_sig_p[thpr,tag,var,scen0,scen1,lndsea] = Rsigp
     r_sig_n[thpr,tag,var,scen0,scen1,lndsea] = Rsign
 
+    n_all  [thpr,tag,var,scen0,scen1,lndsea] = Nall
+    n_sig_p[thpr,tag,var,scen0,scen1,lndsea] = Nsigp
+    n_sig_n[thpr,tag,var,scen0,scen1,lndsea] = Nsign
+
+
+
 
 # Figure (count regions) ****
-llscen = [["P15","P20"]]
+#llscen = [["P15","P20"]]
+llscen = [["ALL","P15"],["P15","P20"]]
 
 #lkey1  = [["1","ptot"],["1","pint"],["1","freq"]]
 #lkey2  = [["p99.990","freq"],["p99.990","ptot"]]
 #lkey   =  lkey1 + lkey2 
 lkey   = [["1","ptot"],["p99.990","freq"]]
 
-d_p   = {}
-d_n   = {}
+r_p   = {}
+r_n   = {}
+
+n     = {}
+n_p   = {}
+n_n   = {}
+
+
 lndsea= "lnd"
 for [scen0,scen1] in llscen:
     for [thpr,var] in lkey:
         for tag in ["All","TC","ExC","Mons","Others"]:
-            d_p[tag] =  r_sig_p[thpr,tag,var,scen0,scen1,lndsea]
-            d_n[tag] =  r_sig_n[thpr,tag,var,scen0,scen1,lndsea]
+            r_p[tag] =  r_sig_p[thpr,tag,var,scen0,scen1,lndsea]*100
+            r_n[tag] =  r_sig_n[thpr,tag,var,scen0,scen1,lndsea]*100
 
-        ytick = arange(0.2, 1.0+0.01, 0.2)   # Do not include zero
-        lylim = [-1.0,1.0]
+
+            n  [tag] =  n_all  [thpr,tag,var,scen0,scen1,lndsea]
+            n_p[tag] =  n_sig_p[thpr,tag,var,scen0,scen1,lndsea]
+            n_n[tag] =  n_sig_n[thpr,tag,var,scen0,scen1,lndsea]
+
+
+
+        #ytick = arange(0.2, 1.0+0.01, 0.2)   # Do not include zero
+        #lylim = [-1.0,1.0]
+        ytick = arange(20, 100+0.01, 20)   # Do not include zero
+        lylim = [-100,100]
+
 
         figPath = figDir + "/bar.count.sig.Region.%s.%s.thp.%s.%s.png"%(scen0,scen1,thpr,var)
         stitle = "%s th=%s (%s-%s) Reg"%(var,thpr,scen1,scen0)
 
-        draw_bar(d_p,d_n, ytick, lylim, stitle, figPath)
+        draw_bar(r_p,r_n, n, n_p, n_n, ytick, lylim, stitle, figPath)
 
 
 

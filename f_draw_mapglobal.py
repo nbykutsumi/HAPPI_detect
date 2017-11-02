@@ -10,10 +10,11 @@ from numpy import *
 from matplotlib.colors import Normalize
 from mpl_toolkits.axes_grid1 import AxesGrid
 from mpl_toolkits.basemap import Basemap
+from mpl_toolkits.basemap import maskoceans
 from matplotlib import cbook
 import shapefile
 from matplotlib.collections import LineCollection
-
+from matplotlib.colors import ListedColormap
 
 class MidPointNorm(Normalize):    
     def __init__(self, midpoint=0, vmin=None, vmax=None, clip=False):
@@ -137,6 +138,12 @@ def rotate_a2dat(Dat):
     Dat_new2 = Dat[:,128:]
     return np.concatenate((Dat_new2, Dat_new1), axis=1)
 
+
+def rotate_a2dat_between180(Dat):
+    Dat_new1 = Dat[:,:128]
+    Dat_new2 = Dat[:,128:]-360.
+    return np.concatenate((Dat_new2, Dat_new1), axis=1)
+
 #***************************************************************
 
 """
@@ -207,20 +214,24 @@ cbarPath = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/dif.tagpr.2106-2115.ALL/MIROC
 
 shapePath= '/home/utsumi/mnt/wellshare/data/MapMask/IPCC2012_shapefile/referenceRegions.shp'
 
-def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="RdBu_r", vmin=None, vmax=None, figPath=None, cbarPath=None, cbarOrientation="horizontal",lregion=None,stitle=None):
+def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="RdBu_r", vmin=None, vmax=None, figPath=None, cbarPath=None, cbarOrientation="horizontal",lregion=None,stitle=None,seaMask=False):
+
+
 
     # Shift Lon
     a2dat_new   = rotate_a2dat(a2dat)
+
     
     X,Y     = meshgrid(Lon, Lat)
     X_new   = rotate_a2dat(X)
     Y_new   = Y
-    
-    
+
+    X_new180= rotate_a2dat_between180(X)   
+    Y_new180= Y
     
     # Hatches
-    
-    a2hatch_new = rotate_a2dat(a2hatch)
+    if a2hatch !=None:
+        a2hatch_new = rotate_a2dat(a2hatch)
     
     # Plot
     if bnd != None:
@@ -232,26 +243,35 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="RdBu_r"
     M    = Basemap( projection="robin", lon_0=0, resolution="l", ax=ax)
     
     X_prj, Y_prj = M(X_new,Y_new)
-    
+
+
+    # Mask oceans
+    if seaMask==True:
+        a2dat_new = maskoceans(X_new180, Y_new180, a2dat_new)
+    if (seaMask==True)&(a2hatch !=None):
+        a2hatch_new= maskoceans(X_new180, Y_new180, a2hatch_new)
+     
     # Fill colors
     if bnd != None:
         fill = M.pcolormesh(X_prj,Y_prj,a2dat_new,  cmap=cmap, norm=norm)
     else:
         fill = M.pcolormesh(X_prj,Y_prj,a2dat_new,  cmap=cmap, vmin=vmin, vmax=vmax)
 
+
     # Hatches
-    dotsize   = 1
-    dotcolor  = "0.2"
-    a2dot_new = a2hatch_new
-    Xdot_new = ma.masked_where(a2dot_new==miss, X_new)[::dotstep,::dotstep]
-    Ydot_new = ma.masked_where(a2dot_new==miss, Y_new)[::dotstep,::dotstep]
-    Xdot_prj, Ydot_prj = M(Xdot_new, Ydot_new)
-    M.plot(Xdot_prj, Ydot_prj, "o", markersize=dotsize, color=dotcolor)
+    if a2hatch !=None:
+        dotsize   = 1
+        dotcolor  = "0.2"
+        a2dot_new = a2hatch_new
+        Xdot_new = ma.masked_where(a2dot_new==miss, X_new)[::dotstep,::dotstep]
+        Ydot_new = ma.masked_where(a2dot_new==miss, Y_new)[::dotstep,::dotstep]
+        Xdot_prj, Ydot_prj = M(Xdot_new, Ydot_new)
+        M.plot(Xdot_prj, Ydot_prj, "o", markersize=dotsize, color=dotcolor)
     
     # Coastline
     M.drawcoastlines(linewidth=0.3, color="k")
-    
-    
+
+   
     # Shapefile
     if lregion == None: lregion=[]
     sf    = shapefile.Reader(shapePath)
@@ -309,8 +329,10 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="RdBu_r"
             x_txt = x_txt - 10
         elif regionnum==9:
             x_txt = x_txt - 15
+        elif regionnum==11:
+            x_txt, y_txt = min(xx)+2,  max(yy)-12
         elif regionnum==12:
-            x_txt, y_txt = min(xx)+3,  max(yy)-1
+            x_txt, y_txt = min(xx)+32,  max(yy)-12
         elif regionnum==18:
             x_txt, y_txt = min(xx)+9,  y_txt
         elif regionnum==23:
@@ -339,11 +361,13 @@ def draw_map_robin(a2dat, a2hatch, Lat, Lon, miss=-9999, bnd=None, cmap="RdBu_r"
     # Colorbar
     if type(cbarPath) != bool:
         if cbarOrientation=="horizontal":
-            figcbar  = plt.figure(figsize=(5,0.6))
-            axcbar   = figcbar.add_axes([0.1,0.4,0.8,0.58])
+            #figcbar  = plt.figure(figsize=(1.8,0.5))
+            figcbar  = plt.figure(figsize=(2.5,0.5))
+            axcbar   = figcbar.add_axes([0.1,0.5,0.8,0.48])
         elif cbarOrientation=="vertical":
 
-            figcbar  = plt.figure(figsize=(0.8,1.6))
+            #figcbar  = plt.figure(figsize=(0.8,1.6))
+            figcbar  = plt.figure(figsize=(0.8,2.0))
             axcbar   = figcbar.add_axes([0.01,0.05,0.25,0.9])
 
  

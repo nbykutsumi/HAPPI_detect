@@ -31,28 +31,14 @@ res     = "128x256"
 ny, nx  = 128, 256
 miss    = -9999.
 
+llscen = [["ALL","P15"],["ALL","P20"],["P15","P20"]]
+#llscen = [["ALL","P15"],["P15","P20"]]
+#llscen = [["ALL","P20"]]
 
-#lkey   = [[1,"tc","ptot"]]
-lkey   = [[1,tag,"ptot"] for tag in ["plain","tc","cf","ms","ot"]]
-#lkey   = [[1,tag,"pint"] for tag in ["plain","tc","cf","ms","ot"]]
-#lkey   = [[1,tag,"pint"] for tag in ["tc","cf","ms","ot"]]
-#lkey   = [[1,tag,"freq"] for tag in ["plain","tc","cf","ms","ot"]]
-#lkey   = [["p99.990",tag,"freq"] for tag in ["plain","tc","cf","ms","ot"]]
-#lkey   = [[1,tag,"freq"] for tag in ["tc","cf","ms","ot"]]
-#lkey1   = [[1,tag,"frac.ptot"] for tag in ["tc","cf","ms","ot"]]
-#lkey   = [["p99.990",tag,"frac.ptot"] for tag in ["tc","cf","ms","ot"]]
-#lkey2   = [["p99.990",tag,"frac.freq"] for tag in ["tc","cf","ms","ot"]]
-#lkey   = [["p99.990",tag,"freq"] for tag in ["plain","tc","cf","ms","ot"]]
-#lkey   = [[1,"plain","ptot"],[1,"plain","freq"],[1,"plain","pint"],["p99.990","plain","ptot"]]
-#lkey   = [[1,"plain","freq"],[1,"plain","pint"]]
-#lkey   = [[1,"plain","freq"],[1,"plain","pint"]]
-#lkey   = [["p99.900","plain","freq"],["p99.990","plain","freq"]]
 
-#lkey  = lkey1 + lkey2
 
-#lregion     = ["ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA","MED","NAS","NAU","NEB","NEU","SAF","SAH","SAS","SAU","SSA","SEA","TIB","WAF","WAS","WSA","WNA"]
+lregion     = ["ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA","MED","NAS","NAU","NEB","NEU","SAF","SAH","SAS","SAU","SSA","SEA","TIB","WAF","WAS","WSA","WNA"]
 #lregion     = ["SAU"]
-lregion  = []
 
 dieYear = {"ALL": (2006, 2015)
          ,"P15": (2106, 2115)
@@ -178,92 +164,76 @@ def load_var_3D(scen, lens, tag, var, thpr):
 
 
 #--------------------------------------
-for [thpr, tag, var] in lkey:
-    llscen = [["ALL","P15"],["ALL","P20"],["P15","P20"]]
-    #llscen = [["ALL","P20"]]
+ltag  = ["plain","tc","cf","ms","ot"]
+#ltag  = ["tc"]
+thpr  = 1
+for tag in ltag:
     for lscen in llscen:
         season = "ALL"
         scen0  = lscen[0]
         scen1  = lscen[1]
-        # Check statistical Difference (Welch's t-test)
-        a3var0 = load_var_3D(scen0,lens, tag, var, thpr)
-        a3var1 = load_var_3D(scen1,lens, tag, var, thpr)
 
+        # Decomposition
+        a3N0 = load_var_3D(scen0,lens, tag, "freq", thpr)    #[# of 6hr]
+        a3N1 = load_var_3D(scen1,lens, tag, "freq", thpr)    #[# of 6hr]
+        a3I0 = load_var_3D(scen0,lens, tag, "pint", thpr)/4. #[mm/6hr]
+        a3I1 = load_var_3D(scen1,lens, tag, "pint", thpr)/4. #[mm/6hr]
+
+        a3I0 = ma.masked_invalid(a3I0)
+        a3I1 = ma.masked_invalid(a3I1)
+
+        a2N0 = a3N0.mean(axis=0)
+        a2I0 = a3I0.mean(axis=0)
+        a2dN = a3N1.mean(axis=0)-a3N0.mean(axis=0)
+        a2dI = a3I1.mean(axis=0)-a3I0.mean(axis=0)
+
+        a2dNI = a2dN * a2I0
+        a2NdI = a2N0 * a2dI
+        a2dNdI= a2dN * a2dI
 
         # Mask --------
-        a3var0 = ma.masked_invalid(a3var0)
-        a3var1 = ma.masked_invalid(a3var1)
+        a2dNI = ma.masked_invalid(a2dNI).filled(0.0)
+        a2NdI = ma.masked_invalid(a2NdI).filled(0.0)
+        a2dNdI= ma.masked_invalid(a2dNdI).filled(0.0)
 
         #-------------- 
-        a2t, a2p = scipy.stats.ttest_ind(a3var1, a3var0, axis=0, equal_var= False)
-        
-        a2hatch  = ma.masked_greater(a2p,0.05).filled(miss)
+        for var in ["dNI","NdI","dNdI"]:
+            if   var == "dNI":
+                a2var = a2dNI
+                a3key0= a3N0
+                a3key1= a3N1
 
-        a2hatch  = ma.masked_invalid(a2hatch).filled(miss)
-        a2dif    = a3var1.mean(axis=0) - a3var0.mean(axis=0)
+            elif var == "NdI":
+                a2var = a2NdI
+                a3key0= a3I0
+                a3key1= a3I1
 
-        # Mask for Pint
-        if var == "pint":
-            a3ptot = load_var_3D(scen0,lens, tag, "ptot", thpr)
-            print a3ptot[0]
-            a2ptot = a3ptot.mean(axis=0)
-            a2dif  = ma.masked_where(a2ptot<100., a2dif).filled(0.0)
-            a2hatch= ma.masked_where(a2ptot<100., a2hatch).filled(miss)
+            elif var == "dNdI":
+                a2var = a2dNdI
 
-        # Figure ********************
-        figDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/fig"
-        figPath = os.path.join(figDir,"map.dif.%s.%s.%s-%s.th.%s.%s.png"%(tag,var,scen1,scen0,thpr,season))
-        cbarPath= os.path.join(figDir,"cbar.map.dif.%s.%s.th.%s.png"%(tag,var,thpr))
-        
-        util.mk_dir(figDir)
-        # title
-        #dtag={ "plain":""
-        #     ,"tc":"tropical cyclones"
-        #     ,"cf":"extratropical cyclones"
-        #     ,"ms":"monsoon"
-        #     ,"ot":"others"
-        #     }
+
+            # Check statistical Difference (Welch's t-test)
+            #if var in ["dNI","NdI"]:
+            #    a2t, a2p = scipy.stats.ttest_ind(a3key1, a3key0, axis=0, equal_var= False)
+            #    a2hatch  = ma.masked_greater(a2p,0.05).filled(miss)
+            #else:
+            #    a2hatch  = None
+
+            a2hatch  = None
     
-        stitle  = "diff %s %s %s-%s th=%s"%(tag,var,scen1,scen0,thpr)
+            # Figure ********************
+            figDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/fig"
+            figPath = os.path.join(figDir,"map.decomp.%s.%s.%s-%s.th.%s.%s.png"%(tag,var,scen1,scen0,thpr,season))
+            cbarPath= os.path.join(figDir,"cbar.map.decomp.th.%s.png"%(thpr))
+            
+            util.mk_dir(figDir)
         
-        if   (thpr==1)&(var=="ptot"):
+            stitle  = "decomp %s %s %s-%s th=%s"%(tag,var,scen1,scen0,thpr)
+            
             #bnd = arange(-120,120+0.001,10)
             bnd = None
             vmin, vmax= -120, 120
-            a2mask = None
-
-        elif (thpr==1)&(var=="freq"):
-            #bnd = arange(-30,30+0.01, 2)
-            bnd = None
-            vmin, vmax = -30, 30
-            a2mask = None
-
-        elif (thpr==1)&(var=="pint"):
-            #bnd = arange(-0.7,0.7+0.001, 0.05)
-            bnd = None
-            #vmin, vmax = -0.7, 0.7
-            vmin, vmax = -1.0, 1.0
-
-        elif (thpr=="p99.900")&(var=="freq"):
-            #bnd = arange(-1.0,1.0+0.001,0.01)
-            bnd = None
-            vmin, vmax = -1.0, 1.0
-            a2mask = None
-
-        elif (thpr=="p99.990")&(var=="freq"):
-            #bnd = arange(-0.2,0.2+0.001,0.01)
-            bnd = None
-            vmin, vmax = -0.2, 0.2
-            a2mask = None
-
-        elif (var in ["frac.ptot","frac.freq"]):
-            #bnd = None
-            #vmin, vmax = -1.0,1.0
-            bnd = [-0.2,-0.15,-0.1,-0.05,0.05,0.1,0.15,0.2]
-            vmin, vmax = -0.2, 0.2
-            a2hatch    = ma.masked_where(abs(a2dif)<0.05, a2hatch).filled(miss)
-            a2mask = None
-
-        cmap   = "RdBu_r"
-        #hd_fig.DrawMap_dotshade(a2dif, a2dot, Lat, Lon, bnd=bnd, figname=figPath, cbarname=cbarPath, dotstep=2, markersize=0.2, stitle=stitle) 
-        f_draw_mapglobal.draw_map_robin(a2dat=a2dif, a2hatch=a2hatch, Lat=Lat, Lon=Lon, miss=-9999, bnd=bnd, cmap=cmap, vmin=vmin, vmax=vmax, figPath=figPath, cbarPath=cbarPath, cbarOrientation="horizontal",lregion=lregion,stitle=stitle,seaMask=False) 
+    
+    
+            cmap   = "RdBu_r"
+            f_draw_mapglobal.draw_map_robin(a2dat=a2var, a2hatch=a2hatch, Lat=Lat, Lon=Lon, miss=-9999, bnd=bnd, cmap=cmap, vmin=vmin, vmax=vmax, figPath=figPath, cbarPath=cbarPath, cbarOrientation="vertical",lregion=lregion,stitle=stitle) 

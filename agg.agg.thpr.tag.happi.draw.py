@@ -71,6 +71,7 @@ def ret_sthpr(thpr):
 def ret_bnd(vartype, thpr):
     if vartype=="Ptot":
         bnd  = array([100,400,700,1000,1300,1600,1900,2200,2500,2800])
+        #bnd  = array([100,600,1100,1600,2100,2600,2])
 
     elif (vartype=="Num")&(thpr=="p99.900"):
         bnd  = arange(2,18+1, 2)
@@ -126,9 +127,9 @@ for (scen, thpr, vartype) in lKey:
         # Figure
 
         #bnd  = [0,100,400,700,1000,1300,1600,1900,2200,2500,2800]
-        bnd  = arange(0,2800+1,50)
+        #bnd  = arange(0,2800+1,700)
         #bnd = ret_bnd(vartype, thpr)
-        #bnd  = None
+        bnd  = None
         #bnd  = range(0,300+1,20)
 
         #cmap = "jet_r"
@@ -136,7 +137,8 @@ for (scen, thpr, vartype) in lKey:
         #vmin = None
 
         cmap = "gnuplot2_r"
-        vmax = 2800
+        #vmax = 2800
+        vmax = 2500
         vmin = 0
 
         #extend = "both"   # "neither","both","min","max"
@@ -148,7 +150,8 @@ for (scen, thpr, vartype) in lKey:
         stitle = "%s %s %s [%s] %s"%(model,scen,vartype, sunit, tag)
 
         # Figure name
-        figDir= baseDir + "/fig"
+        #figDir= baseDir + "/fig"
+        figDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/fig"
         util.mk_dir(figDir)
         figname= figDir + "/%s.th.%s.%s.%s.png"%(model ,sthpr, tag,"Ptot")
         # Cbar
@@ -158,13 +161,14 @@ for (scen, thpr, vartype) in lKey:
             cbarname=False
 
 
-        figname= figDir + "/%s.th.%s.%s.%s.png"%(scen,sthpr,tag,vartype)
+        figname= figDir + "/map.%s.th.%s.%s.%s.png"%(scen,sthpr,tag,vartype)
 
         #hd_fig.DrawMap_dotshade(a2in=a2var, a2dot=a2sig, a1lat=Lat, a1lon=Lon, BBox=BBox, bnd=bnd, cmap=cmap, extend=extend, white_minmax=white_minmax, figname=figname, cbarname=cbarname, stitle=stitle, dotstep=5, dotcolor="0.8")
 
         a2hatch = ones([ny,nx],float32)*miss
 
-        f_draw_mapglobal.draw_map_robin(a2dat=a2var, a2hatch=a2hatch, Lat=Lat, Lon=Lon, miss=-9999, bnd=bnd, cmap=cmap, vmin=vmin, vmax=vmax, figPath=figname, cbarPath=cbarname, stitle=stitle)
+        #f_draw_mapglobal.draw_map_robin(a2dat=a2var, a2hatch=a2hatch, Lat=Lat, Lon=Lon, miss=-9999, bnd=bnd, cmap=cmap, vmin=vmin, vmax=vmax, figPath=figname, cbarPath=cbarname, stitle=stitle, cbarOrientation="vertical")
+        f_draw_mapglobal.draw_map_robin(a2dat=a2var, a2hatch=a2hatch, Lat=Lat, Lon=Lon, miss=-9999, bnd=bnd, cmap=cmap, vmin=vmin, vmax=vmax, figPath=figname, cbarPath=cbarname, stitle=stitle, cbarOrientation="horizontal")
 
 
 

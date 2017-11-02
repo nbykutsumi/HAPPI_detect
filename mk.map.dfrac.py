@@ -32,8 +32,9 @@ ny, nx  = 128, 256
 lscen   = ["P15","P20"]
 #lthpr   = ["p99.990"]
 #lthpr   = ["p99.900"]
-lthpr   = [0]
+#lthpr   = [0]
 #lthpr   = [0,"p99.900","p99.990"]
+lthpr   = [0,"p99.990"]
 
 region = "GLB"
 #region = "JPN"
@@ -175,27 +176,3 @@ for thpr in lthpr:
                 Fig.DrawMapSimple(a2in=a2in, a1lat=a1lat, a1lon=a1lon, BBox=BBox, bnd=bnd, parallels=parallels, meridians=meridians,  extend="both", white_minmax="center", cmap=cmap, stitle=stitle, figname=figname, cbarname=cbarname, maskcolor="gray", figsize=(6,3))
     
 
-#                #******* test ************
-#                for iens, ens in enumerate(lens):
-#                
-#                    figname = figDir + "/temp.%s.%s.inc.frac.th.%s.%s.%s.%d.png"%(region, scen, sthpr, dattype, tag, iens) 
-#                    if itag==0:
-#                        cbarname= figDir + "/cbar.temp.inc.frac.png"
-#                    else:
-#                        cbarname= False
-#        
-#                    stitle = "%s %s %s %s"%(scen, sthpr, dattype, tag)
-#    
-#                    #bnd = arange(-1,1.0+0.01,0.2)
-#                    bnd = array([-0.2,-0.15,-0.1,-0.05,0.05, 0.1, 0.15, 0.2])
-#        
-#                    Fig.DrawMapSimple(a2in=Dat[scen,tag][iens], a1lat=a1lat, a1lon=a1lon, BBox=BBox, bnd=bnd, parallels=parallels, meridians=meridians,  extend="both", white_minmax="center", cmap=cmap, stitle=stitle, figname=figname, cbarname=cbarname, figsize=(6,3))
-#        
-#                   
-#               
-#                    print "*"*50
-#                    print dattype, scen, tag
-#                if (dattype=="Sum")&(tag == "cf"):
-#                    sys.exit()
-    
-    

@@ -45,7 +45,7 @@ dieYear = {"JRA":(2006, 2014)
 season = "ALL"
 #season = 1
 
-ddtype = {"sum":"float32", "num":"int32"}
+ddtype = {"sum":"float32", "num":"float32"}
 #BBox  = [[-80,0.0],[80,360]]
 miss  = -9999.
 hp    = HAPPI.Happi()
@@ -58,6 +58,17 @@ jra   = JRA55.Jra55()
 LatJRA= jra.Lat
 LonJRA= jra.Lon
 #----------------------
+def ret_gridarea(model):
+    if model=="MIROC5":
+        srcPath = "/data4/common/HAPPI/MIROC5/MIROC5.area.float32.128x256"
+    else:
+        print "check model",model
+        sys.exit()
+    aOut = fromfile(srcPath, float32).reshape(ny,nx)
+    return aOut
+
+
+
 def ret_sthpr(thpr):
     if type(thpr) == str:
       sthpr = thpr
@@ -122,6 +133,7 @@ def main(**kwargs):
     lndsea     = kwargs["lndsea"]
     nens       = len(lens)
 
+    a2gridarea   = ret_gridarea(model)/1.e+9
 
     sthpr= ret_sthpr(thpr)
     da1prcp = {}
@@ -133,7 +145,7 @@ def main(**kwargs):
         nYear = eYear - iYear +1
         totaltimes = calc_totaltimes(iYear,eYear,season)
         a3sum = empty([len(lens),ny,nx],float32)
-        a3num = empty([len(lens),ny,nx],int32)
+        a3num = empty([len(lens),ny,nx],float32)
         for iens, ens in enumerate(lens):
             run = "%s-%s-%03d"%(expr, scen, ens)
     
@@ -144,7 +156,7 @@ def main(**kwargs):
             baseDir, sDir, numPath = hd_func.path_sumnum_clim(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear, eYear=eYear, season=season, sumnum="num")
     
             a3sum[iens] = fromfile(sumPath, float32).reshape(ny,nx)
-            a3num[iens] = fromfile(numPath, int32).reshape(ny,nx)
+            a3num[iens] = fromfile(numPath, float32).reshape(ny,nx)
     
     
         # Regional values
@@ -155,14 +167,21 @@ def main(**kwargs):
         for region in lregion:
             #a2region = hd_func.ret_a2region_ipcc(region, ny, nx)
             a2region = ret_regionmask(regiontype,region,lndsea)
-            a1prcp = [ma.masked_where(a2region==0., a3prcp[i]).mean()
+            # GRID AREA WEIGHTING ---
+            a2gridarea_tmp = ma.masked_where(a2region==0, a2gridarea)
+            a2wgt = a2gridarea_tmp / a2gridarea_tmp.sum()
+            #------------------------
+            #a1prcp = [ma.masked_where(a2region==0., a3prcp[i]).mean()
+            a1prcp = [ma.masked_where(a2region==0., a3prcp[i]*a2wgt).sum()
                     for i in range(len(lens))]
     
-            a1freq = [ma.masked_where(a2region==0., a3freq[i]).mean()
+            #a1freq = [ma.masked_where(a2region==0., a3freq[i]).mean()
+            a1freq = [ma.masked_where(a2region==0., a3freq[i]*a2wgt).sum()
                     for i in range(len(lens))]
     
             
-            a1pint = [ma.masked_where(a2region==0., a3pint[i]).mean()
+            #a1pint = [ma.masked_where(a2region==0., a3pint[i]).mean()
+            a1pint = [ma.masked_where(a2region==0., a3pint[i]*a2wgt).sum()
                     for i in range(len(lens))]
     
     
@@ -184,7 +203,7 @@ def main(**kwargs):
         baseDir, sDir, numPath = hd_func.path_sumnum_clim(model="__", run="__", res="145x288", sthpr=sthpr, tag=tag, iYear=iYear, eYear=eYear, season=season, sumnum="num")
         
         a2sum = fromfile(sumPath, float32).reshape(145,288)
-        a2num = fromfile(numPath, int32  ).reshape(145,288)
+        a2num = fromfile(numPath, float32  ).reshape(145,288)
     
         jrasum[tag] = a2sum
         jranum[tag] = a2num
@@ -201,11 +220,19 @@ def main(**kwargs):
                 BBox    = hd_func.ret_regionBBox(region)
                 a2region= grids.mk_mask_BBox(LatJRA, LonJRA, BBox)
     
+            # GRID AREA WEIGHTING ---
+            a2gridarea_tmp = ma.masked_where(a2region==0, a2gridarea)
+            a2wgt = a2gridarea_tmp / a2gridarea_tmp.sum()
+            #------------------------
     
-    
-            prcp = ma.masked_where(a2region==0., a2prcp).mean()
-            freq = ma.masked_where(a2region==0., a2freq).mean()
-            pint = ma.masked_where(a2region==0., a2pint).mean()
+            #prcp = ma.masked_where(a2region==0., a2prcp).mean()
+            #freq = ma.masked_where(a2region==0., a2freq).mean()
+            #pint = ma.masked_where(a2region==0., a2pint).mean()
+
+            prcp = ma.masked_where(a2region==0., a2prcp*a2wgt).sum()
+            freq = ma.masked_where(a2region==0., a2freq*a2wgt).sum()
+            pint = ma.masked_where(a2region==0., a2pint*a2wgt).sum()
+ 
     
             da1prcp[region] = array([prcp]*len(lens))
             da1freq[region] = array([freq]*len(lens))
@@ -230,8 +257,11 @@ def load_Freq(**kwargs):
     lndsea     = kwargs["lndsea"]
     nens       = len(lens)
 
+    a2gridarea   = ret_gridarea(model)/1.e+9
+    a2wgt        = a2gridarea / a2gridarea.sum()
+
     sumnum = "num"
-    dtype  = {"sum":float32, "num":int32}[sumnum]
+    dtype  = {"sum":float32, "num":float32}[sumnum]
     sthpr= ret_sthpr(thpr)
     da1freq = {}
 
@@ -254,11 +284,18 @@ def load_Freq(**kwargs):
         for region in lregion:
             #a2region = hd_func.ret_a2region_ipcc(region, ny, nx)
             a2region = ret_regionmask(regiontype,region,lndsea)
+
+            # GRID AREA WEIGHTING ---
+            a2gridarea_tmp = ma.masked_where(a2region==0, a2gridarea)
+            a2wgt = a2gridarea_tmp / a2gridarea_tmp.sum()
+            #------------------------
     
-            a1freq = [ma.masked_where(a2region==0., a3freq[i]).mean()
+            #a1freq = [ma.masked_where(a2region==0., a3freq[i]).mean()
+            a1freq = [ma.masked_where(a2region==0., a3freq[i]*a2wgt).sum()
                     for i in range(len(lens))]
     
             da1freq[region] = ma.masked_invalid(array(a1freq)).filled(0.0)
+
     
     elif scen =="JRA":
         iYear, eYear = dieYear[scen]
@@ -284,9 +321,13 @@ def load_Freq(**kwargs):
                 BBox    = hd_func.ret_regionBBox(region)
                 a2region= grids.mk_mask_BBox(LatJRA, LonJRA, BBox)
     
+            # GRID AREA WEIGHTING ---
+            a2gridarea_tmp = ma.masked_where(a2region==0, a2gridarea)
+            a2wgt = a2gridarea_tmp / a2gridarea_tmp.sum()
+            #------------------------
     
-    
-            freq = ma.masked_where(a2region==0., a2freq).mean()
+            #freq = ma.masked_where(a2region==0., a2freq).mean()
+            freq = ma.masked_where(a2region==0., a2freq*a2wgt).sum()
     
             da1freq[region] = array([freq]*len(lens))
     

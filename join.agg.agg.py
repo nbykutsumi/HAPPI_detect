@@ -13,7 +13,8 @@ model   = "MIROC5"
 expr    = "C20"
 run     = "C20-ALL-001"   # only for baseDir, no need to change
 #lscen   = ["ALL","P15","P20"]
-lscen   = ["P15","P20"]
+#lscen   = ["P15","P20"]
+lscen   = ["ALL"]
 res     = "128x256"
 
 dieYear = {"JRA55":[2006,2014]
@@ -23,7 +24,7 @@ dieYear = {"JRA55":[2006,2014]
           }
 
 ltag  = ["plain"] + ["tc","cf","ms","ot"]
-thpr   = 0
+thpr   = 1
 season = "ALL"
 #----------------------
 def ret_sthpr(thpr):
@@ -38,11 +39,12 @@ da2dat  = {}
 for scen in lscen:
     iYear, eYear = dieYear[scen]
     for i, tag in enumerate(ltag):
-        baseDir, sDir, sumPath = hd_func.path_sumnum_clim(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear, eYear=eYear, season=season, sumnum="sum")
+        #baseDir, sDir, sumPath = hd_func.path_sumnum_clim(model=model, run=run, res=res, sthpr=sthpr, tag=tag, iYear=iYear, eYear=eYear, season=season, sumnum="sum")
     
         # Figure
-        figDir  = baseDir + "/fig"
-        figname = figDir + "/%s.th.%s.%s.%s.png"%(scen,sthpr,tag,"Ptot")
+        #figDir  = baseDir + "/fig"
+        figDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/fig"
+        figname = figDir + "/map.%s.th.%s.%s.%s.png"%(scen,sthpr,tag,"Ptot")
     
         iimg    = Image.open(figname)
         a2array = asarray(iimg)

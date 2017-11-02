@@ -30,28 +30,26 @@ lens    = range(1,50)
 res     = "128x256"
 ny, nx  = 128, 256
 miss    = -9999.
-vmin    = 100  # mm/year
+
 
 #lkey   = [[1,"plain","ptot"]]
 #lkey   = [[1,"tc","ptot"]]
-#lkey   = [[1,tag,"ptot"] for tag in ["tc","cf","ms","ot"]]
+#lkey1   = [[1,tag,"ptot"] for tag in ["plain","tc","cf","ms","ot"]]
+#lkey2   = [[1,tag,"pint"] for tag in ["plain","tc","cf","ms","ot"]]
+#lkey3   = [[1,tag,"freq"] for tag in ["plain","tc","cf","ms","ot"]]
+lkey   = [["p99.990",tag,"freq"] for tag in ["plain","tc","cf","ms","ot"]]
+#lkey   = [[1,tag,"freq"] for tag in ["tc","cf","ms","ot"]]
+#lkey   = [[1,tag,"frac.ptot"] for tag in ["tc","cf","ms","ot"]]
+#lkey   = [["p99.990",tag,"frac.ptot"] for tag in ["tc","cf","ms","ot"]]
+#lkey   = [["p99.990",tag,"frac.freq"] for tag in ["tc","cf","ms","ot"]]
+#lkey   = [["p99.990",tag,"freq"] for tag in ["tc","cf","ms","ot"]]
 #lkey   = [[1,"plain","ptot"],[1,"plain","freq"],[1,"plain","pint"]]
 #lkey   = [[1,"plain","freq"],[1,"plain","pint"]]
 #lkey   = [[1,"plain","freq"],[1,"plain","pint"]]
 #lkey   = [["p99.900","plain","freq"],["p99.990","plain","freq"]]
-#lkey   = [[1,"plain","ptot"],["p99.900","plain","freq"],["p99.990","plain","freq"]]
-#lkey   = [["p99.900","plain","freq"]]
 
+#lkey = lkey1 + lkey2 + lkey3
 
-ltag   = ["plain","tc","cf","ms","ot"]
-lkey1  = [[1,tag,"ptot"] for tag in ltag]
-lkey2  = [[1,tag,"pint"] for tag in ltag]
-lkey3  = [[1,tag,"freq"] for tag in ltag]
-lkey4  = [["p99.990",tag,"freq"] for tag in ltag]
-lkey5  = [["p99.990",tag,"ptot"] for tag in ltag]
-#lkey   = lkey1 + lkey2
-#lkey   = lkey1 + lkey2 + lkey3 + lkey4 + lkey5
-lkey  = [["p99.990",tag,"freq"] for tag in ltag]
 
 lregion     = ["ALA","AMZ","CAM","CAS","CEU","CGI","CNA","EAF","EAS","ENA","MED","NAS","NAU","NEB","NEU","SAF","SAH","SAS","SAU","SSA","SEA","TIB","WAF","WAS","WSA","WNA"]
 #lregion     = ["SAU"]
@@ -128,7 +126,7 @@ def ret_sthpr(thpr):
 
 
 def load_var_single(scen, ens, tag, var, thpr):
-    dattype = {"sum":float32, "num":float32, "ptot":float32}
+    dattype = {"sum":float32, "num":int32, "ptot":float32}
     run = "%s-%s-%03d"%(expr, scen, ens)
     iYear, eYear = dieYear[scen]
     nYear = eYear - iYear +1
@@ -146,7 +144,7 @@ def load_var_single(scen, ens, tag, var, thpr):
 
     elif var == "freq":
         totalnum = calc_totaltimes(iYear,eYear,season)
-        a2num = load_var_single(scen,ens, tag, "num", thpr)
+        a2num = load_var_single(scen,ens,tag, "num", thpr)
         a2out = a2num / float(nYear)   # times per season
         return a2out
 
@@ -157,6 +155,17 @@ def load_var_single(scen, ens, tag, var, thpr):
         a2out = a2sum / a2num * 60*60*24.  #[mm/day]
         return a2out
 
+    elif var == "frac.ptot":
+        a2all = load_var_single(scen,ens,"plain","ptot",thpr)
+        a2tag = load_var_single(scen,ens,tag    ,"ptot",thpr)
+        a2out = a2tag / a2all
+        return a2out
+
+    elif var == "frac.freq":
+        a2all = load_var_single(scen,ens,"plain","freq",thpr)
+        a2tag = load_var_single(scen,ens,tag    ,"freq",thpr)
+        a2out = a2tag / a2all
+        return a2out
 
 
 def load_var_3D(scen, lens, tag, var, thpr):
@@ -166,145 +175,72 @@ def load_var_3D(scen, lens, tag, var, thpr):
         a3var[iens] = load_var_single(scen, ens, tag, var, thpr)
     return a3var
 
-def ret_regionmask(regiontype, region, lndsea=None):
-    if regiontype=="IPCC":
-        a2region= hd_func.ret_a2region_ipcc(region, ny, nx)
-    elif regiontype=="JPN":
-        BBox    = hd_func.ret_regionBBox(region)
-        a2region= grids.mk_mask_BBox(Lat, Lon, BBox)
-    else:
-        print "check regiontype",regiontype
-        print "by",__file__
-        print inspect.currentframe().f_code.co_name
-        sys.exit()
 
-    if   lndsea == None:
-        pass
-    elif lndsea == "lnd":
-        a2lndfrc = hp.load_const("lndfrc")
-        a2region = ma.masked_where(a2lndfrc ==0.0, a2region).filled(0.)
-    elif lndsea == "sea":
-        a2lndfrc = hp.load_const("lndfrc")
-        a2region = ma.masked_where(a2lndfrc >0.0, a2region).filled(0.)
-    else:
-        print "check lndsea",lndsea
-        print "must be None / lnd / sea"
-        print "by",__file__
-        print inspect.currentframe().f_code.co_name
-        sys.exit()
-
-    return a2region
-
-
-def ret_gridarea(model):
-    if model=="MIROC5":
-        srcPath = "/data4/common/HAPPI/MIROC5/MIROC5.area.float32.128x256"
-    else:
-        print "check model",model
-        sys.exit()
-    aOut = fromfile(srcPath, float32).reshape(ny,nx)
-    return aOut
 
 #--------------------------------------
-
-a2area     = ret_gridarea(model)*1.e-6
-print a2area
-
-a2lndfrc   = hp.load_const("lndfrc")
-d2lndsea   = {}
-d2lndsea["lnd"]  = ma.masked_less(a2lndfrc, 0.1).filled(miss)
-d2lndsea["sea"]  = ma.masked_greater_equal(a2lndfrc, 0.1).filled(miss)
-a2one  = ones([ny,nx],float32)
-
-llndsea    = ["lnd","sea"]
-n_all = {}
-n_sig_p = {}
-n_sig_n = {}
-r_sig_p= {}    # positive change (increase)
-r_sig_n= {}    # negative change (decrease)
-
 for [thpr, tag, var] in lkey:
-    season = "ALL"
     llscen = [["ALL","P15"],["ALL","P20"],["P15","P20"]]
-
-    # load tag ptot (thpr=1) for maski
-    a2ptot0 = load_var_3D("ALL",lens, tag, "ptot", 1).mean(axis=0)
-    a2ptot1 = load_var_3D("P15",lens, tag, "ptot", 1).mean(axis=0)
-    a2ptot2 = load_var_3D("P20",lens, tag, "ptot", 1).mean(axis=0)
-
-    a2prmask = a2one*miss
-    a2prmask = ma.masked_where(a2ptot0>vmin, a2prmask).filled(1.0)
-    a2prmask = ma.masked_where(a2ptot1>vmin, a2prmask).filled(1.0)
-    a2prmask = ma.masked_where(a2ptot2>vmin, a2prmask).filled(1.0)
-
+    #llscen = [["ALL","P20"]]
     for lscen in llscen:
+        season = "ALL"
         scen0  = lscen[0]
         scen1  = lscen[1]
         # Check statistical Difference (Welch's t-test)
         a3var0 = load_var_3D(scen0,lens, tag, var, thpr)
         a3var1 = load_var_3D(scen1,lens, tag, var, thpr)
-        
+
+
+        # Mask --------
+        a3var0 = ma.masked_invalid(a3var0)
+        a3var1 = ma.masked_invalid(a3var1)
+
+        #-------------- 
         a2t, a2p = scipy.stats.ttest_ind(a3var1, a3var0, axis=0, equal_var= False)
         
         a2hatch  = ma.masked_greater(a2p,0.05).filled(miss)
 
         a2hatch  = ma.masked_invalid(a2hatch).filled(miss)
-        a2dif    = a3var1.mean(axis=0) - a3var0.mean(axis=0)
+        a2dif    = (a3var1.mean(axis=0) - a3var0.mean(axis=0))/a3var0.mean(axis=0)*100.
 
-        # Count
-        #a2all    = ma.masked_where(a2prmask==miss, a2one)
-        a2all    = ma.masked_where(a2prmask==miss, a2area)
-        a2sig    = ma.masked_where(a2hatch ==miss, a2all)
-        a2sig_p  = ma.masked_where(a2dif <0, a2sig)
-        a2sig_n  = ma.masked_where(a2dif >0, a2sig)
+        # Mask for Pint
+        if var == "pint":
+            a3ptot = load_var_3D(scen0,lens, tag, "ptot", thpr)
+            print a3ptot[0]
+            a2ptot = a3ptot.mean(axis=0)
+            a2dif  = ma.masked_where(a2ptot<100., a2dif).filled(0.0)
+            a2hatch= ma.masked_where(a2ptot<100., a2hatch).filled(miss)
 
-
-        for lndsea in llndsea:
-            print thpr, tag, var, lscen, lndsea
-            a2all_tmp   = ma.masked_where(d2lndsea[lndsea]==miss, a2all)
-            a2sig_p_tmp = ma.masked_where(d2lndsea[lndsea]==miss, a2sig_p)
-            a2sig_n_tmp = ma.masked_where(d2lndsea[lndsea]==miss, a2sig_n)
-
-            key = (thpr, tag, var, scen0, scen1, lndsea)
-            n_all  [key] = a2all_tmp.sum()
-
-            n_sig_p[key] = a2sig_p_tmp.sum()
-            if ma.is_masked(n_sig_p[key]):
-                n_sig_p[key] = 0.
-
-            r_sig_p[key] = float(n_sig_p[key]) / float(n_all[key])
-
-
-            n_sig_n[key] = a2sig_n_tmp.sum()
-            if ma.is_masked(n_sig_n[key]):
-                n_sig_n[key] = 0.
-
-
-            r_sig_n[key] = float(n_sig_n[key]) / float(n_all[key])
-
-
-            print tag,lscen,lndsea,n_sig_n[key],type(n_sig_n[key])
+        # Figure ********************
+        figDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/fig"
+        figPath = os.path.join(figDir,"map.pctChng.%s.%s.%s-%s.th.%s.%s.png"%(tag,var,scen1,scen0,thpr,season))
+        cbarPath= os.path.join(figDir,"cbar.map.pctChng.%s.%s.th.%s.png"%(tag,var,thpr))
         
-# write ********************
-dtag   = {"plain":"All","tc":"TC","cf":"ExC","ms":"Mons","ot":"Others"}
+        util.mk_dir(figDir)
+        # title
+        #dtag={ "plain":""
+        #     ,"tc":"tropical cyclones"
+        #     ,"cf":"extratropical cyclones"
+        #     ,"ms":"monsoon"
+        #     ,"ot":"others"
+        #     }
+    
+        stitle  = "dif[%%] %s %s %s-%s th=%s"%(tag,var,scen1,scen0,thpr)
+        
+        if   (thpr==1):
+            bnd = None
+            vmin, vmax= -20, 20
+            a2mask = None
+        elif   (thpr in ["p99.900","p99.990"]):
+            bnd = None
+            vmin, vmax= -150, 150
+            a2mask = None
+        else:
+            bnd = None
+            vmin, vmax= -150, 150
+            a2mask = None
 
-#slabel = ",".join(["thpr","tag","var","scen0","scen1","lndsea","N_all","N_sig+","N_sig-","R_sig+","R_sig-"]) +"\n"
-slabel = ",".join(["thpr","tag","var","scen0","scen1","lndsea","Area_all","Area_sig+","Area_sig-","R_sig+","R_sig-"]) +"\n"
-#slables = "a"+ "\n"
-sout   = slabel
-for [thpr, tag, var] in lkey:
-    for lscen in llscen:
-        scen0  = lscen[0]
-        scen1  = lscen[1]
-        for lndsea in llndsea:
-            key  = (thpr, tag, var, scen0, scen1, lndsea)
-            skey  = ",".join(map(str,[thpr, dtag[tag], var, scen0, scen1, lndsea]))
-            sout = sout + skey + ",%s,%s,%s,%s,%s\n"%(n_all[key],n_sig_p[key],n_sig_n[key],r_sig_p[key],r_sig_n[key])
 
 
-figDir  = "/home/utsumi/mnt/wellshare/HAPPI/anlWS/fig"
-util.mk_dir(figDir)
-csvPath = os.path.join(figDir,"count.sig.csv")
-f = open(csvPath, "w"); f.write(sout); f.close()
-print csvPath
-
+        cmap   = "RdBu_r"
+        #hd_fig.DrawMap_dotshade(a2dif, a2dot, Lat, Lon, bnd=bnd, figname=figPath, cbarname=cbarPath, dotstep=2, markersize=0.2, stitle=stitle) 
+        f_draw_mapglobal.draw_map_robin(a2dat=a2dif, a2hatch=a2hatch, Lat=Lat, Lon=Lon, miss=-9999, bnd=bnd, cmap=cmap, vmin=vmin, vmax=vmax, figPath=figPath, cbarPath=cbarPath, cbarOrientation="vertical",lregion=lregion,stitle=stitle, seaMask=True) 

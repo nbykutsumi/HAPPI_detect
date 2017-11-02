@@ -92,7 +92,7 @@ def draw_bar(d_p, d_n, ytick, lylim, stitle, figPath):
     ax   = fig.add_axes([0.21,0.28,0.70,0.62])
     ltag = ["All","TC","ExC","Mons","Others"]
     llndsea = ["lnd","sea"]
-    wbar = 0.3
+    wbar = 0.4
 
     for lndsea in llndsea:
         for itag, tag in enumerate(ltag):
@@ -111,18 +111,22 @@ def draw_bar(d_p, d_n, ytick, lylim, stitle, figPath):
     
             y =  d_p[tag,lndsea]
             ax.bar(x,y,width=wbar, color=colorp,hatch=None,edgecolor="k")
+            #ax.text(x-0.05, y+0.1, ("%d"%(y))[1:], ha="center", rotation=-90)
+            ax.text(x-0.05, y+8, ("%d"%(y)), ha="center", rotation=-90)
     
             y = -d_n[tag,lndsea]
             ax.bar(x,y,width=wbar, color=colorn, hatch="////",edgecolor="k")
-    
-    
+            #ax.text(x-0.05, y-0.09, ("%d"%(abs(y)))[1:], ha="center", rotation=-90)
+            ax.text(x-0.05, y-12, ("%d"%(abs(y))), ha="center", rotation=-90)
+            # text  
+ 
             # h-line
             plt.axhline(0, color="k", linestyle="-",linewidth=0.5)
     
             # x-axis
             lx = [i+0.5*wbar for i in [0,1,2,3,4]]
             lsx= ltag
-            plt.xticks(lx, lsx, fontsize=14, rotation=90)
+            plt.xticks(lx, lsx, fontsize=14, rotation=-90)
     
             # y-axis
             ml  = AutoMinorLocator(2)
@@ -131,12 +135,12 @@ def draw_bar(d_p, d_n, ytick, lylim, stitle, figPath):
             lyp =  ytick
             lyn = -lyp[::-1]
             ly  = concatenate([lyn,[0],lyp],axis=0)
-            lsy = [abs(y) for y in ly]
+            lsy = ["%d"%(abs(y)) for y in ly]
             plt.yticks(ly,lsy, fontsize=14)
             plt.ylim(lylim)
     
             # title
-            plt.title(stitle, fontsize=10)
+            plt.title(stitle, fontsize=8, y=1.07)
     
     plt.savefig(figPath)
     print figPath
@@ -167,9 +171,13 @@ for line in lines[1:]:
     scen0  = line[3]
     scen1  = line[4]
     lndsea = line[5]
-    Nall   = int(line[6])
-    Nsigp  = int(line[7])
-    Nsign  = int(line[8])
+    #Nall   = int(line[6])
+    #Nsigp  = int(line[7])
+    #Nsign  = int(line[8])
+    Aall   = float(line[6])
+    Asigp  = float(line[7])
+    Asign  = float(line[8])
+
     Rsigp  = float(line[9])
     Rsign  = float(line[10])
 
@@ -178,11 +186,13 @@ for line in lines[1:]:
 
 
 # figure (Grid counts) *****
-llscen = [["P15","P20"]]
+#llscen = [["P15","P20"]]
+llscen = [["ALL","P15"],["P15","P20"]]
 
 lkey1  = [["1","ptot"],["1","pint"],["1","freq"]]
 lkey2  = [["p99.990","freq"],["p99.990","ptot"]]
-lkey   =  lkey1 + lkey2 
+#lkey   =  lkey1 + lkey2 
+lkey  = [["p99.990","freq"]]
 
 d_p   = {}
 d_n   = {}
@@ -190,13 +200,13 @@ for [scen0,scen1] in llscen:
     for [thpr,var] in lkey:
         for tag in ["All","TC","ExC","Mons","Others"]:
             for lndsea in ["lnd","sea"]:
-                d_p[tag,lndsea] =  r_sig_p[thpr,tag,var,scen0,scen1,lndsea]
-                d_n[tag,lndsea] =  r_sig_n[thpr,tag,var,scen0,scen1,lndsea]
+                d_p[tag,lndsea] =  r_sig_p[thpr,tag,var,scen0,scen1,lndsea]*100.
+                d_n[tag,lndsea] =  r_sig_n[thpr,tag,var,scen0,scen1,lndsea]*100.
 
-        #ytick = arange(0.1, 0.4+0.01, 0.1)   # Do not include zero
-        #ytick = arange(0.1, 0.7+0.01, 0.1)   # Do not include zero
-        ytick = arange(0.2, 0.7+0.01, 0.2)   # Do not include zero
-        lylim = [-0.7,0.7]
+        #ytick = arange(0.2, 0.7+0.01, 0.2)   # Do not include zero
+        ytick = arange(20, 70+0.01, 20)   # Do not include zero
+        #lylim = [-0.7,0.7]
+        lylim = [-70,70]
 
         figPath = figDir + "/bar.count.sig.%s.%s.thp.%s.%s.png"%(scen0,scen1,thpr,var)
         stitle = "%s thpr=%s (%s-%s)"%(var,thpr,scen1,scen0)
